@@ -58,7 +58,7 @@ jobs:
             exit 1
           fi
           dart run tool/build_release.dart --out build/release
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Index matches the JSON Schema
