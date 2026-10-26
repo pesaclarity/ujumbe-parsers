@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Minimal starter pack. The message shape is illustrative and must be
+# checked against real alerts (then rewritten as synthetic samples).
+schema: 1
+id: kcb
+name: KCB
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - KCB
+time_format: "dd/MM/yyyy 'at' HH:mm"
+
+rules:
+  - id: account_alert
+    type: bank
+    direction_values:
+      debited: out
+      credited: in
+    pattern: '^Dear Customer, KES ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is KES ?(?<balance>[\d,]+\.\d{2})\.'
