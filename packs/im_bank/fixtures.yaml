@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only.
+pack: im_bank
+samples:
+  - name: account debited
+    sender: I&M
+    body: 'Dear Customer, your account 0000****001 has been debited with KES 2,500.00 on 26-Oct-2026 14:05. Ref: IMB000000001. Avail. bal KES 10,000.00.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: out
+      amount_minor: 250000
+      balance_minor: 1000000
+      receipt: IMB000000001
+      account: 0000****001
+      time: '2026-10-26T14:05:00+03:00'
+
+  - name: account credited
+    sender: I&M
+    body: 'Dear Customer, your account 0000****001 has been credited with KES 45,000.00 on 28-Oct-2026 08:30. Ref: IMB000000002. Avail. bal KES 55,000.00.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: in
+      amount_minor: 4500000
+      balance_minor: 5500000
+      receipt: IMB000000002
+      account: 0000****001
+      time: '2026-10-28T08:30:00+03:00'
