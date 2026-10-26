@@ -46,12 +46,24 @@ switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
 }
 ```
 
-Downloaded packs are verified before use:
+Over-the-air pack updates are checked before use; only correctly signed, compatible packs newer than the installed ones come back:
 
 ```dart
-final verifier = PackVerifier([trustedPublicKey]);
-final pack = await verifier.loadVerified(packBytes, signatureBase64);
+final updates = PackUpdateVerifier(pinnedPublicKeys);
+final result = await updates.verify(
+  indexBytes: indexJson,          // index.json from the release
+  indexSignature: indexSig,       // index.json.sig
+  packs: {'mpesa': PackDownload(packBytes, packSig)},
+);
+for (final update in result.accepted) {
+  // Store update.packBytes and update.signature; use update.pack.
+}
+for (final rejection in result.rejected) {
+  // rejection.reason: hashMismatch, signatureInvalid, notNewer, ...
+}
 ```
+
+A stored pack is verified again on load with `PackVerifier([...]).loadVerified(bytes, signature)`.
 
 ## Project layout
 
@@ -64,16 +76,20 @@ lib/
   src/parser.dart        sender filter, parsing, dedupe key, raw-text hash
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass
   src/signing.dart       Ed25519 pack signing and verification
+  src/pack_updates.dart  signed pack index and over-the-air update checks
+  src/version.dart       engine version and semantic version comparison
   src/money.dart         amounts to integer minor units
   src/time_format.dart   locale-free date patterns for message times
 packs/<institution>/
   pack.yaml              the rules
   fixtures.yaml          synthetic samples and expected fields
-schema/                  JSON Schema for pack.yaml and fixtures.yaml
+schema/                  JSON Schema for pack.yaml, fixtures.yaml and the release index.json
 tool/
   check_packs.dart       validate packs and run all fixtures
   bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
   sign_pack.dart         sign a pack (and generate a signing key)
+  build_release.dart     build and sign a release: packs, index.json and signatures
+docs/RELEASING.md        release steps, key custody and rotation
 test/                    engine unit tests and a test over every pack
 ```
 
@@ -117,7 +133,7 @@ dart run tool/sign_pack.dart --key-file /secure/place/ujumbe.seed packs/mpesa
 
 The tool refuses to sign a pack whose fixtures fail. Private keys stay outside the repo, in a hardware key or secrets manager; tests generate throwaway keys.
 
-TODO: release pipeline (which key, where signed packs are published, how the app fetches them).
+Releases are signed in CI: pushing a `v*` tag runs every check, then `tool/build_release.dart` signs each pack and a signed `index.json` listing them, and uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
 
 ## Testing
 

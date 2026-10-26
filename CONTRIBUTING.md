@@ -41,3 +41,7 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 - Small, focused pull requests with a short description of what changed and why.
 - Commit messages: one short line in the imperative, e.g. "Add Equity Bank pack".
 - New dependencies need a reason in the pull request; the engine must stay free of Flutter.
+
+## Releases
+
+Maintainers cut releases and sign packs as described in [docs/RELEASING.md](docs/RELEASING.md). Contributors never need a signing key.
