@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only.
+pack: kcb
+samples:
+  - name: account debited
+    sender: KCB
+    body: 'Dear Customer, KES 3,000.00 has been debited from your account ****0001 on 26/10/2026 at 15:20. Transaction Ref: KCB0000000001. Your available balance is KES 7,000.00.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: out
+      amount_minor: 300000
+      balance_minor: 700000
+      receipt: KCB0000000001
+      account: '****0001'
+      time: '2026-10-26T15:20:00+03:00'
+
+  - name: account credited
+    sender: KCB
+    body: 'Dear Customer, KES 12,500.50 has been credited to your account ****0001 on 27/10/2026 at 09:00. Transaction Ref: KCB0000000002. Your available balance is KES 19,500.50.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: in
+      amount_minor: 1250050
+      balance_minor: 1950050
+      receipt: KCB0000000002
+      account: '****0001'
+      time: '2026-10-27T09:00:00+03:00'
+
+  - name: balance enquiry goes to the review inbox
+    sender: KCB
+    body: 'Dear Customer, your account balance is KES 19,500.50 as at 27/10/2026 10:00.'
+    expect: unmatched

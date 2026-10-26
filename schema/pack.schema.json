@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pesaclarity/ujumbe-parsers/schema/pack.schema.json",
+  "title": "ujumbe parser pack",
+  "description": "One institution's SMS rules. The engine (ParserPack.fromYaml) is the authority; this schema is for editors and reviewers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "name", "version", "currency", "utc_offset", "senders", "rules"],
+  "properties": {
+    "schema": {
+      "description": "Pack format version.",
+      "const": 1
+    },
+    "id": {
+      "description": "Stable identifier; must equal the pack's directory name.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "name": {
+      "description": "Display name shown in My accounts.",
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "description": "Semantic version of the rules. Bump it whenever a rule changes.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "currency": {
+      "description": "ISO 4217 code for amounts in this institution's messages.",
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "utc_offset": {
+      "description": "Offset of the wall-clock times printed in messages, e.g. +03:00 for Kenya.",
+      "type": "string",
+      "pattern": "^[+-]\\d{2}:\\d{2}$"
+    },
+    "senders": {
+      "description": "Sender IDs to read. Compared case-insensitively. No two packs may share one.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "time_format": { "$ref": "#/$defs/timeFormat" },
+    "rules": {
+      "description": "Tried in order; the first match wins.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule" }
+    }
+  },
+  "$defs": {
+    "timeFormat": {
+      "description": "How to read the captured `time` group. Tokens: d dd M MM MMM yy yyyy H HH h hh mm ss a; 'quoted' text is literal.",
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": { "enum": ["in", "out"] },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "pattern"],
+      "properties": {
+        "id": {
+          "description": "Unique within the pack.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "type": {
+          "enum": [
+            "sent",
+            "received",
+            "paybill",
+            "till",
+            "withdrawal",
+            "airtime",
+            "fuliza",
+            "fuliza_repayment",
+            "reversal",
+            "bank"
+          ]
+        },
+        "direction": {
+          "description": "Fixed direction. Use this or direction_values, not both.",
+          "$ref": "#/$defs/direction"
+        },
+        "direction_values": {
+          "description": "Maps the captured `direction` text (case-insensitive) to in or out.",
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/direction" }
+        },
+        "time_format": { "$ref": "#/$defs/timeFormat" },
+        "ignore_case": { "type": "boolean", "default": false },
+        "pattern": {
+          "description": "Dart regular expression. Named groups allowed: receipt, amount (required), direction, counterparty, account, balance, fee, time.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        { "required": ["direction"], "not": { "required": ["direction_values"] } },
+        { "required": ["direction_values"], "not": { "required": ["direction"] } }
+      ]
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pesaclarity/ujumbe-parsers/schema/fixtures.schema.json",
+  "title": "ujumbe pack fixtures",
+  "description": "Synthetic sample messages for one pack and the fields each must parse to. Fields left out of `expect` must parse as absent.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pack", "samples"],
+  "properties": {
+    "pack": { "description": "The pack id these samples test.", "type": "string" },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sender", "body", "expect"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "sender": { "type": "string", "minLength": 1 },
+          "received_at": {
+            "description": "ISO 8601 time the phone received the message. Defaults to 2026-01-01T09:00:00Z.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Synthetic message text. Never a real message.",
+            "type": "string",
+            "minLength": 1
+          },
+          "expect": {
+            "oneOf": [
+              { "const": "unmatched" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["rule", "type", "direction", "amount_minor", "time"],
+                "properties": {
+                  "rule": { "type": "string" },
+                  "type": { "type": "string" },
+                  "direction": { "enum": ["in", "out"] },
+                  "amount_minor": { "type": "integer", "minimum": 0 },
+                  "fee_minor": { "type": "integer", "minimum": 0 },
+                  "balance_minor": { "type": "integer" },
+                  "receipt": { "type": "string" },
+                  "counterparty": { "type": "string" },
+                  "account": { "type": "string" },
+                  "time": { "description": "ISO 8601 with offset.", "type": "string" }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
