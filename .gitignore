@@ -1,0 +1,19 @@
+# Dart
+.dart_tool/
+build/
+# A library package: consumers resolve their own versions.
+pubspec.lock
+coverage/
+doc/api/
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Secrets: pack-signing keys never live in the repo
+.env
+*.key
+*.seed
+*.pem
