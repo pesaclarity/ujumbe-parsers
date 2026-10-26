@@ -2,7 +2,7 @@ name: ujumbe
 description: >-
   SMS parser packs and a pure Dart parsing engine for M-Pesa and Kenyan bank
   messages. Part of Pesa Clarity.
-version: 0.1.0-dev.1
+version: 0.1.0
 repository: https://github.com/pesaclarity/ujumbe-parsers
 issue_tracker: https://github.com/pesaclarity/ujumbe-parsers/issues
 publish_to: none

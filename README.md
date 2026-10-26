@@ -18,12 +18,22 @@ dart run tool/check_packs.dart   # validate every pack and run its fixtures
 dart test
 ```
 
+Depending on it from the app (pin a release tag):
+
+```yaml
+dependencies:
+  ujumbe:
+    git:
+      url: https://github.com/pesaclarity/ujumbe-parsers
+      ref: v0.1.0
+```
+
 Using the engine:
 
 ```dart
 import 'package:ujumbe/ujumbe.dart';
 
-final mpesa = ParserPack.fromYaml(packYaml);
+final mpesa = loadBundledPack('mpesa'); // or ParserPack.fromYaml(yaml)
 final parser = SmsParser([mpesa]); // only the accounts the user ticked
 
 switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
@@ -48,6 +58,8 @@ final pack = await verifier.loadVerified(packBytes, signatureBase64);
 ```
 lib/
   ujumbe.dart            public API
+  src/bundled_packs.dart load the packs shipped with the package
+  src/bundled_packs.g.dart generated from packs/; do not edit
   src/pack.dart          pack model and validation
   src/parser.dart        sender filter, parsing, dedupe key, raw-text hash
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass
@@ -60,6 +72,7 @@ packs/<institution>/
 schema/                  JSON Schema for pack.yaml and fixtures.yaml
 tool/
   check_packs.dart       validate packs and run all fixtures
+  bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
   sign_pack.dart         sign a pack (and generate a signing key)
 test/                    engine unit tests and a test over every pack
 ```
@@ -83,7 +96,7 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
 
    Rules are tried in order and the first match wins, so put specific shapes before general ones. If a message prints no time, the engine uses the time the phone received it.
 3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
-4. **Check it.** `dart run tool/check_packs.dart packs/<id>` and `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
+4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.
 
 Bump a pack's `version` whenever its rules change. Maintainers sign released packs; contributors never need a key.
@@ -111,6 +124,7 @@ TODO: release pipeline (which key, where signed packs are published, how the app
 ```sh
 dart format --output=none --set-exit-if-changed .
 dart analyze --fatal-infos
+dart run tool/bundle_packs.dart --check
 dart run tool/check_packs.dart
 dart test
 ```

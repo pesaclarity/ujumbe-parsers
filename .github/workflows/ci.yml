@@ -26,6 +26,8 @@ jobs:
         run: dart format --output=none --set-exit-if-changed .
       - name: Analyse
         run: dart analyze --fatal-infos
+      - name: Check the bundled pack index is current
+        run: dart run tool/bundle_packs.dart --check
       - name: Check packs
         run: dart run tool/check_packs.dart
       - name: Test

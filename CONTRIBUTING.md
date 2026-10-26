@@ -15,11 +15,12 @@ dart pub get
 ```sh
 dart format .
 dart analyze --fatal-infos
+dart run tool/bundle_packs.dart --check
 dart run tool/check_packs.dart
 dart test
 ```
 
-All four must pass; CI runs the same checks.
+All five must pass; CI runs the same checks.
 
 ## Parser packs
 
@@ -27,7 +28,7 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 
 - Synthetic data only. Never commit a real message, name, phone number, account number or receipt, even partly masked.
 - Every rule needs at least one sample, and a pack is accepted only when all its samples pass.
-- Bump the pack's `version` when its rules change.
+- Bump the pack's `version` when its rules change, and run `dart run tool/bundle_packs.dart` so the packaged copy matches.
 
 ## Engine changes
 
