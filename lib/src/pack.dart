@@ -1,6 +1,7 @@
 import 'package:yaml/yaml.dart';
 
 import 'time_format.dart';
+import 'version.dart';
 
 /// The pack format version this engine reads.
 const supportedPackSchema = 1;
@@ -16,6 +17,9 @@ const allowedGroups = {
   'fee',
   'time',
 };
+
+/// The engine version assumed when a pack does not set `min_engine`.
+const firstEngineVersion = '0.1.0';
 
 /// Which way money moved, from the account holder's point of view.
 enum Direction {
@@ -145,6 +149,7 @@ class ParserPack {
     required this.utcOffset,
     required this.senders,
     required this.rules,
+    this.minEngineVersion = firstEngineVersion,
   });
 
   /// Parses and validates a pack from its YAML text.
@@ -168,6 +173,7 @@ class ParserPack {
       'id',
       'name',
       'version',
+      'min_engine',
       'currency',
       'utc_offset',
       'senders',
@@ -184,6 +190,15 @@ class ParserPack {
     final id = r.string('id', pattern: _idPattern);
     final name = r.string('name');
     final version = r.string('version', pattern: _semver);
+    final minEngine =
+        r.string('min_engine', pattern: _semver, optional: true) ??
+        firstEngineVersion;
+    if (_semver.hasMatch(minEngine) &&
+        compareVersions(minEngine, engineVersion) > 0) {
+      problems.add(
+        'min_engine: needs engine $minEngine, this engine is $engineVersion',
+      );
+    }
     final currency = r.string('currency', pattern: RegExp(r'^[A-Z]{3}$'));
     final offsetText = r.string('utc_offset');
     final utcOffset = offsetText == null ? null : parseUtcOffset(offsetText);
@@ -217,6 +232,7 @@ class ParserPack {
       id: id!,
       name: name!,
       version: version!,
+      minEngineVersion: minEngine,
       currency: currency!,
       utcOffset: utcOffset!,
       senders: List.unmodifiable(senders),
@@ -232,6 +248,9 @@ class ParserPack {
 
   /// Semantic version of the pack's rules.
   final String version;
+
+  /// The oldest engine version that can read this pack (`min_engine`).
+  final String minEngineVersion;
 
   /// ISO 4217 code for amounts in this institution's messages.
   final String currency;

@@ -22,3 +22,8 @@ ParserPack loadBundledPack(String id) {
 List<ParserPack> loadBundledPacks() => [
   for (final id in bundledPackIds) loadBundledPack(id),
 ];
+
+/// The version of each bundled pack, by pack id.
+Map<String, String> bundledPackVersions() => {
+  for (final pack in loadBundledPacks()) pack.id: pack.version,
+};

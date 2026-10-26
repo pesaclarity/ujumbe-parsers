@@ -5,6 +5,7 @@ import 'package:args/args.dart';
 import 'package:ujumbe/ujumbe.dart';
 
 import 'src/pack_files.dart';
+import 'src/signing_key.dart';
 
 /// Signs a pack after its fixtures pass, writing `pack.yaml.sig` beside it.
 ///
@@ -37,9 +38,11 @@ Future<void> main(List<String> args) async {
   if (options.rest.length != 1) {
     return _usage(parser, 'Give exactly one pack directory.');
   }
-  final seedText = _readSeed(options.option('key-file'));
-  if (seedText == null) {
-    return _usage(parser, 'Set UJUMBE_SIGNING_KEY or pass --key-file.');
+  final PackSigner signer;
+  try {
+    signer = await loadSigner(options.option('key-file'));
+  } on SigningKeyException catch (e) {
+    return _usage(parser, e.message);
   }
 
   final dir = Directory(options.rest.single);
@@ -52,7 +55,6 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final signer = await PackSigner.fromSeed(base64.decode(seedText.trim()));
   final packFile = File('${dir.path}/pack.yaml');
   final bytes = packFile.readAsBytesSync();
   final signature = await signer.sign(bytes);
@@ -63,11 +65,6 @@ Future<void> main(List<String> args) async {
   stdout
     ..writeln('Signed ${loaded.pack.id} ${loaded.pack.version}')
     ..writeln('Public key: ${base64.encode(await signer.publicKey())}');
-}
-
-String? _readSeed(String? keyFile) {
-  if (keyFile != null) return File(keyFile).readAsStringSync();
-  return Platform.environment['UJUMBE_SIGNING_KEY'];
 }
 
 Future<void> _generate(String path) async {

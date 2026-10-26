@@ -26,6 +26,11 @@
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
+    "min_engine": {
+      "description": "Oldest engine version that can read this pack. Defaults to 0.1.0. Raise it when the pack relies on a newer engine feature.",
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
     "currency": {
       "description": "ISO 4217 code for amounts in this institution's messages.",
       "type": "string",

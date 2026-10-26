@@ -8,6 +8,7 @@ void main() {
     final pack = ParserPack.fromYaml(testPackYaml);
     expect(pack.id, 'example_wallet');
     expect(pack.version, '1.0.0');
+    expect(pack.minEngineVersion, firstEngineVersion);
     expect(pack.utcOffset, const Duration(hours: 3));
     expect(pack.senders, ['EXWALLET']);
     expect(pack.rules.map((r) => r.id), ['sent', 'alert']);
@@ -63,10 +64,22 @@ void main() {
       '',
     ),
     'not yaml': ':\n  - [',
+    'needs a newer engine': mutate(
+      'currency:',
+      'min_engine: 99.0.0\ncurrency:',
+    ),
+    'malformed min_engine': mutate('currency:', 'min_engine: soon\ncurrency:'),
   };
   for (final entry in cases.entries) {
     test('rejects ${entry.key}', () {
       expect(problemsFor(entry.value), isNotEmpty);
     });
   }
+
+  test('reads min_engine', () {
+    final pack = ParserPack.fromYaml(
+      mutate('currency:', 'min_engine: $engineVersion\ncurrency:'),
+    );
+    expect(pack.minEngineVersion, engineVersion);
+  });
 }
