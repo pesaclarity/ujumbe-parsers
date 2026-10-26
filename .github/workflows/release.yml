@@ -1,0 +1,79 @@
+name: Release packs
+
+# Signs the packs and publishes them as release assets for over-the-air
+# updates. Never triggered by pull requests: only a pushed v* tag, or a
+# manual run started from a tag, can reach the signing key.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Checks
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Sign and publish packs
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Require a tag
+        if: github.ref_type != 'tag'
+        run: |
+          echo "::error::Start this workflow from a v* tag, not a branch."
+          exit 1
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(sed -n 's/^version: *//p' pubspec.yaml)"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::Tag $TAG does not match pubspec.yaml version $version."
+            exit 1
+          fi
+      - name: Build and sign the release
+        env:
+          UJUMBE_SIGNING_KEY: ${{ secrets.UJUMBE_SIGNING_KEY }}
+        run: |
+          if [ -z "$UJUMBE_SIGNING_KEY" ]; then
+            echo "::error::Repository secret UJUMBE_SIGNING_KEY is not set."
+            exit 1
+          fi
+          dart run tool/build_release.dart --out build/release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Index matches the JSON Schema
+        run: |
+          pip install check-jsonschema==0.38.2
+          check-jsonschema --schemafile schema/index.schema.json build/release/index.json
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" build/release/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" build/release/* --repo "$GITHUB_REPOSITORY" \
+              --verify-tag --title "$TAG" \
+              --notes "Signed parser packs for over-the-air updates. See docs/RELEASING.md."
+          fi
