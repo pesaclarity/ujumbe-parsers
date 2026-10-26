@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pesaclarity/ujumbe-parsers/schema/index.schema.json",
+  "title": "ujumbe pack index",
+  "description": "index.json in a pack release, written by tool/build_release.dart and signed in index.json.sig. The engine (PackIndex.fromJson) is the authority; it ignores unknown fields so later formats can add them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "packs"],
+  "properties": {
+    "format": {
+      "description": "Index format version.",
+      "const": 1
+    },
+    "packs": {
+      "description": "One entry per pack in the release, sorted by id.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "semver": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "fileName": {
+      "description": "A release asset name, with no directory part.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "min_engine", "sha256", "file", "signature"],
+      "properties": {
+        "id": {
+          "description": "Pack id, as in pack.yaml.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "version": {
+          "description": "Pack version, as in pack.yaml.",
+          "$ref": "#/$defs/semver"
+        },
+        "min_engine": {
+          "description": "Oldest engine version that can read the pack, as in pack.yaml (default 0.1.0).",
+          "$ref": "#/$defs/semver"
+        },
+        "sha256": {
+          "description": "Lower-case hex SHA-256 of the exact pack file bytes.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "file": {
+          "description": "Asset name of the pack file.",
+          "$ref": "#/$defs/fileName"
+        },
+        "signature": {
+          "description": "Asset name of the pack's detached base64 Ed25519 signature.",
+          "$ref": "#/$defs/fileName"
+        }
+      }
+    }
+  }
+}
