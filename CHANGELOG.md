@@ -2,6 +2,10 @@
 
 All notable changes to this package are listed here. Versions follow [semantic versioning](https://semver.org); until 1.0 a minor version may break the pack format or the API.
 
+## Unreleased
+
+- `MpesaStatementParser` reads the text of an M-Pesa full statement (extracted from the PDF by the app) into transactions with the same dedupe key as SMS, folds fee rows into their payments, and reports the statement period, opening and closing balances, and any balance that does not follow from the row before it.
+
 ## 0.1.0
 
 First release, for the Pesa Clarity app to depend on by git tag.

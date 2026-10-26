@@ -1,6 +1,6 @@
 # ujumbe-parsers
 
-SMS parser packs and the pure Dart engine that reads them, for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, I&M, KCB and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
+SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, I&M, KCB and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
 
 **Codename:** ujumbe, Swahili for "message".
 
@@ -46,6 +46,17 @@ switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
 }
 ```
 
+Statements backfill history and check balances. The app extracts the text from the PDF (and handles its password); the engine reads the text:
+
+```dart
+final statement = const MpesaStatementParser().parse(extractedText);
+statement.transactions;        // same dedupeKey as the matching SMS
+statement.openingBalanceMinor; // and closingBalanceMinor, periodStart, periodEnd
+if (!statement.reconciles) {
+  // statement.balanceBreaks and statement.unreadLines show the gap.
+}
+```
+
 Downloaded packs are verified before use:
 
 ```dart
@@ -62,6 +73,7 @@ lib/
   src/bundled_packs.g.dart generated from packs/; do not edit
   src/pack.dart          pack model and validation
   src/parser.dart        sender filter, parsing, dedupe key, raw-text hash
+  src/mpesa_statement.dart M-Pesa statement text to transactions and balances
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass
   src/signing.dart       Ed25519 pack signing and verification
   src/money.dart         amounts to integer minor units
@@ -75,6 +87,7 @@ tool/
   bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
   sign_pack.dart         sign a pack (and generate a signing key)
 test/                    engine unit tests and a test over every pack
+  support/               synthetic statement generator
 ```
 
 ## Adding an institution
