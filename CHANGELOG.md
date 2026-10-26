@@ -4,6 +4,7 @@ All notable changes to this package are listed here. Versions follow [semantic v
 
 ## Unreleased
 
+- `MpesaStatementParser` reads the text of an M-Pesa full statement (extracted from the PDF by the app) into transactions with the same dedupe key as SMS, folds fee rows into their payments, and reports the statement period, opening and closing balances, and any balance that does not follow from the row before it.
 - Signed pack releases for over-the-air updates: a signed `index.json` (with JSON Schema) lists each pack's version, minimum engine version, SHA-256 and signature file.
 - `PackUpdateVerifier` accepts only packs that are correctly signed, match the index, suit this engine and are newer than the installed copy, and gives a typed `PackRejectionReason` for the rest.
 - Optional `min_engine` field in `pack.yaml`; `engineVersion` and `compareVersions`.
