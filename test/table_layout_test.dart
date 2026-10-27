@@ -98,12 +98,20 @@ void main() {
         _w('SALARY', 100, 92),
         _w('500.00', 375, 92),
         _w('2,000,500.00', 445, 92),
+        // A sign printed apart from its number stays in the amount column.
+        _w('03/10/2026', 20, 104),
+        _w('FEE', 100, 104),
+        _w('-', 300, 104),
+        _w('5.00', 305, 104),
+        _w('2,000,495.00', 445, 104),
       ]),
     ];
     final table = readTable(pages, _pack);
     expect(table.headerFound, isTrue);
     expect(table.outside, ['EXAMPLE BANK']);
-    expect(table.rows, hasLength(2));
+    expect(table.rows, hasLength(3));
+    expect(table.rows[2][StatementColumnKey.moneyOut], '- 5.00');
+    expect(table.rows[2][StatementColumnKey.description], 'FEE');
 
     final first = table.rows[0];
     expect(first.page, 1);

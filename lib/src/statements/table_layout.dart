@@ -115,9 +115,10 @@ const _maxHeaderWords = 4;
 const _leftSlack = 2.0;
 
 /// An amount as statements print it: `1,234.50`, `-50.00`, `(50.00)`,
-/// `KES 10.00` split over words, or with a `CR` or `DR` suffix.
+/// `KES 10.00` split over words, or with a `CR` or `DR` suffix; or a sign
+/// that a PDF printed apart from its number.
 final _number = RegExp(
-  r'^[-(]?(?:[A-Z]{3}\.?)?[\d,]*\d(?:\.\d+)?\)?(?:CR|DR)?$',
+  r'^(?:[-(]?(?:[A-Z]{3}\.?)?[\d,]*\d(?:\.\d+)?\)?(?:CR|DR)?|[-(])$',
   caseSensitive: false,
 );
 
