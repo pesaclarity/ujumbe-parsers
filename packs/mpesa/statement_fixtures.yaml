@@ -1,0 +1,189 @@
+# yaml-language-server: $schema=../../schema/statement-fixtures.schema.json
+# Synthetic statements only: fake names, masked fake numbers, made-up
+# receipts. Columns are left edges, or right edges after ">".
+pack: mpesa_statement
+statements:
+  - name: two pages, newest first, a row wrapping across the page break
+    columns: [30, 90, 195, 375, ">545", ">615", ">690"]
+    pages:
+      -
+        - "M-PESA STATEMENT"
+        - "Customer Name: JANE DOE"
+        - "Mobile Number: 0700 000 000"
+        - "Statement Period: 01 Oct 2026 - 31 Oct 2026"
+        - "Request Date: 01 Nov 2026"
+        - "SUMMARY"
+        - "TRANSACTION TYPE PAID IN PAID OUT"
+        - "DETAILED STATEMENT"
+        - ["Receipt No.", "Completion Time", "Details", "Transaction Status", "Paid In", "Withdrawn", "Balance"]
+        - ["TJA0000012", "2026-10-27 09:00:00", "Merchant Payment Reversal of", "Completed", "350.00", "", "7,841.00"]
+        - ["", "", "TJA0000004", "", "", "", ""]
+        - ["TJA0000010", "2026-10-27 08:05:00", "Business Payment from 400001 -", "Completed", "5,000.00", "", "7,491.00"]
+        - ["", "", "EXAMPLE SACCO via API", "", "", "", ""]
+        - ["TJA0000009", "2026-10-27 07:00:00", "OD Loan Repayment to 232323 -", "Completed", "", "-300.00", "2,491.00"]
+        - ["", "", "M-PESA Overdraw", "", "", "", ""]
+        - ["TJA0000008", "2026-10-26 21:00:05", "Merchant Payment Fuliza M-Pesa to", "Completed", "", "-300.00", "2,791.00"]
+        - ["", "", "5000002 - EXAMPLE KIOSK", "", "", "", ""]
+        - ["TJA0000007", "2026-10-26 21:00:00", "OverDraft of Credit Party", "Completed", "300.00", "", "3,091.00"]
+        - ["TJA0000011", "2026-10-26 20:00:00", "Customer Transfer to 0700***003 -", "Failed", "", "-500.00", "2,791.00"]
+        - "Disclaimer: synthetic test statement, not a real record."
+        - "Page 1 of 2"
+      -
+        - "M-PESA STATEMENT"
+        - ["Receipt No.", "Completion Time", "Details", "Transaction Status", "Paid In", "Withdrawn", "Balance"]
+        - ["", "", "MARY WANJIRU", "", "", "", ""]
+        - ["TJA0000006", "2026-10-26 19:00:00", "Airtime Purchase", "Completed", "", "-100.00", "2,791.00"]
+        - ["TJA0000005", "2026-10-26 17:10:30", "Withdrawal Charge", "Completed", "", "-29.00", "2,891.00"]
+        - ["TJA0000005", "2026-10-26 17:10:30", "Customer Withdrawal At Agent Till", "Completed", "", "-1,000.00", "2,920.00"]
+        - ["", "", "123456 - EXAMPLE AGENT SHOP", "", "", "", ""]
+        - ["", "", "NAIROBI", "", "", "", ""]
+        - ["TJA0000004", "2026-10-26 13:45:00", "Merchant Payment Online to 5000001", "Completed", "", "-350.00", "3,920.00"]
+        - ["", "", "- EXAMPLE GROCERS", "", "", "", ""]
+        - ["TJA0000002", "2026-10-26 11:30:05", "Pay Bill Charge", "Completed", "", "-15.00", "4,270.00"]
+        - ["TJA0000002", "2026-10-26 11:30:05", "Pay Bill Online to 888880 -", "Completed", "", "-1,200.00", "4,285.00"]
+        - ["", "", "EXAMPLE POWER LTD Acc. 1234567890", "", "", "", ""]
+        - ["TJA0000001", "2026-10-26 09:15:42", "Customer Transfer of Funds Charge", "Completed", "", "-15.00", "5,485.00"]
+        - ["TJA0000001", "2026-10-26 09:15:42", "Customer Transfer to 0700***001 -", "Completed", "", "-1,500.00", "5,500.00"]
+        - ["", "", "JANE DOE", "", "", "", ""]
+        - ["TJA0000003", "2026-10-26 08:02:10", "Funds received from 0700***002 -", "Completed", "2,000.00", "", "7,000.00"]
+        - ["", "", "JOHN KAMAU", "", "", "", ""]
+        - "Disclaimer: synthetic test statement, not a real record."
+        - "Page 2 of 2"
+    expect:
+      period: ['2026-10-01', '2026-10-31']
+      opening_balance_minor: 500000
+      closing_balance_minor: 784100
+      reconciles: true
+      unread_lines: 0
+      transactions:
+        - rule: "statement_received"
+          type: "received"
+          direction: "in"
+          amount_minor: 200000
+          balance_minor: 700000
+          receipt: "TJA0000003"
+          counterparty: "JOHN KAMAU"
+          account: "0700***002"
+          time: "2026-10-26T08:02:10+03:00"
+        - rule: "statement_sent"
+          type: "sent"
+          direction: "out"
+          amount_minor: 150000
+          fee_minor: 1500
+          balance_minor: 548500
+          receipt: "TJA0000001"
+          counterparty: "JANE DOE"
+          account: "0700***001"
+          time: "2026-10-26T09:15:42+03:00"
+        - rule: "statement_paybill"
+          type: "paybill"
+          direction: "out"
+          amount_minor: 120000
+          fee_minor: 1500
+          balance_minor: 427000
+          receipt: "TJA0000002"
+          counterparty: "EXAMPLE POWER LTD"
+          account: "1234567890"
+          time: "2026-10-26T11:30:05+03:00"
+        - rule: "statement_till"
+          type: "till"
+          direction: "out"
+          amount_minor: 35000
+          balance_minor: 392000
+          receipt: "TJA0000004"
+          counterparty: "EXAMPLE GROCERS"
+          time: "2026-10-26T13:45:00+03:00"
+        - rule: "statement_withdrawal"
+          type: "withdrawal"
+          direction: "out"
+          amount_minor: 100000
+          fee_minor: 2900
+          balance_minor: 289100
+          receipt: "TJA0000005"
+          counterparty: "EXAMPLE AGENT SHOP NAIROBI"
+          account: "123456"
+          time: "2026-10-26T17:10:30+03:00"
+        - rule: "statement_airtime"
+          type: "airtime"
+          direction: "out"
+          amount_minor: 10000
+          balance_minor: 279100
+          receipt: "TJA0000006"
+          time: "2026-10-26T19:00:00+03:00"
+        - rule: "statement_fuliza"
+          type: "fuliza"
+          direction: "in"
+          amount_minor: 30000
+          balance_minor: 309100
+          receipt: "TJA0000007"
+          time: "2026-10-26T21:00:00+03:00"
+        - rule: "statement_till"
+          type: "till"
+          direction: "out"
+          amount_minor: 30000
+          balance_minor: 279100
+          receipt: "TJA0000008"
+          counterparty: "EXAMPLE KIOSK"
+          time: "2026-10-26T21:00:05+03:00"
+        - rule: "statement_fuliza_repayment"
+          type: "fuliza_repayment"
+          direction: "out"
+          amount_minor: 30000
+          balance_minor: 249100
+          receipt: "TJA0000009"
+          time: "2026-10-27T07:00:00+03:00"
+        - rule: "statement_received"
+          type: "received"
+          direction: "in"
+          amount_minor: 500000
+          balance_minor: 749100
+          receipt: "TJA0000010"
+          counterparty: "EXAMPLE SACCO"
+          account: "400001"
+          time: "2026-10-27T08:05:00+03:00"
+        - rule: "statement_reversal"
+          type: "reversal"
+          direction: "in"
+          amount_minor: 35000
+          balance_minor: 784100
+          receipt: "TJA0000012"
+          account: "TJA0000004"
+          time: "2026-10-27T09:00:00+03:00"
+
+  - name: oldest first with a row missing shows a balance break
+    columns: [30, 90, 195, 375, ">545", ">615", ">690"]
+    pages:
+      -
+        - "M-PESA STATEMENT"
+        - "Statement Period: 01 Oct 2026 - 31 Oct 2026"
+        - ["Receipt No.", "Completion Time", "Details", "Transaction Status", "Paid In", "Withdrawn", "Balance"]
+        - ["TJA0000003", "2026-10-26 08:02:10", "Funds received from 0700***002 -", "Completed", "2,000.00", "", "7,000.00"]
+        - ["", "", "JOHN KAMAU", "", "", "", ""]
+        - ["TJA0000001", "2026-10-26 09:15:42", "Customer Transfer to 0700***001 -", "Completed", "", "-1,500.00", "5,500.00"]
+        - ["", "", "JANE DOE", "", "", "", ""]
+        - ["TJA0000001", "2026-10-26 09:15:42", "Customer Transfer of Funds Charge", "Completed", "", "-15.00", "5,485.00"]
+        - ["TJA0000002", "2026-10-26 11:30:05", "Pay Bill Online to 888880 -", "Completed", "", "-1,200.00", "4,285.00"]
+        - ["", "", "EXAMPLE POWER LTD Acc. 1234567890", "", "", "", ""]
+        - ["TJA0000002", "2026-10-26 11:30:05", "Pay Bill Charge", "Completed", "", "-15.00", "4,270.00"]
+        - ["TJA0000005", "2026-10-26 17:10:30", "Customer Withdrawal At Agent Till", "Completed", "", "-1,000.00", "2,920.00"]
+        - ["", "", "123456 - EXAMPLE AGENT SHOP", "", "", "", ""]
+        - ["", "", "NAIROBI", "", "", "", ""]
+        - ["TJA0000005", "2026-10-26 17:10:30", "Withdrawal Charge", "Completed", "", "-29.00", "2,891.00"]
+        - ["TJA0000006", "2026-10-26 19:00:00", "Airtime Purchase", "Completed", "", "-100.00", "2,791.00"]
+        - ["TJA0000011", "2026-10-26 20:00:00", "Customer Transfer to 0700***003 -", "Failed", "", "-500.00", "2,791.00"]
+        - ["", "", "MARY WANJIRU", "", "", "", ""]
+        - ["TJA0000007", "2026-10-26 21:00:00", "OverDraft of Credit Party", "Completed", "300.00", "", "3,091.00"]
+        - ["TJA0000008", "2026-10-26 21:00:05", "Merchant Payment Fuliza M-Pesa to", "Completed", "", "-300.00", "2,791.00"]
+        - ["", "", "5000002 - EXAMPLE KIOSK", "", "", "", ""]
+        - ["TJA0000009", "2026-10-27 07:00:00", "OD Loan Repayment to 232323 -", "Completed", "", "-300.00", "2,491.00"]
+        - ["", "", "M-PESA Overdraw", "", "", "", ""]
+        - ["TJA0000010", "2026-10-27 08:05:00", "Business Payment from 400001 -", "Completed", "5,000.00", "", "7,491.00"]
+        - ["", "", "EXAMPLE SACCO via API", "", "", "", ""]
+        - ["TJA0000012", "2026-10-27 09:00:00", "Merchant Payment Reversal of", "Completed", "350.00", "", "7,841.00"]
+        - ["", "", "TJA0000004", "", "", "", ""]
+        - "Page 1 of 1"
+    expect:
+      opening_balance_minor: 500000
+      closing_balance_minor: 784100
+      reconciles: false
+      unread_lines: 0

@@ -146,3 +146,81 @@ List<String> _wrap(String text, int width) {
   lines.add(line);
   return lines;
 }
+
+/// Opening balance of [syntheticOctober], in cents.
+const syntheticOpening = 500000;
+
+/// A synthetic October: every row type, a fee row per payment that has
+/// one, and a failed row.
+const syntheticOctober = [
+  SyntheticEntry(
+    'TJA0000003',
+    '2026-10-26 08:02:10',
+    'Funds received from 0700***002 - JOHN KAMAU',
+    paidIn: 200000,
+  ),
+  SyntheticEntry(
+    'TJA0000001',
+    '2026-10-26 09:15:42',
+    'Customer Transfer to 0700***001 - JANE DOE',
+    withdrawn: 150000,
+  ),
+  SyntheticEntry(
+    'TJA0000001',
+    '2026-10-26 09:15:42',
+    'Customer Transfer of Funds Charge',
+    withdrawn: 1500,
+  ),
+  SyntheticEntry(
+    'TJA0000002',
+    '2026-10-26 11:30:05',
+    'Pay Bill Online to 888880 - EXAMPLE POWER LTD Acc. 1234567890',
+    withdrawn: 120000,
+  ),
+  SyntheticEntry(
+    'TJA0000002',
+    '2026-10-26 11:30:05',
+    'Pay Bill Charge',
+    withdrawn: 1500,
+  ),
+  SyntheticEntry(
+    'TJA0000004',
+    '2026-10-26 13:45:00',
+    'Merchant Payment Online to 5000001 - EXAMPLE GROCERS',
+    withdrawn: 35000,
+  ),
+  SyntheticEntry(
+    'TJA0000005',
+    '2026-10-26 17:10:30',
+    'Customer Withdrawal At Agent Till 123456 - EXAMPLE AGENT SHOP NAIROBI',
+    withdrawn: 100000,
+  ),
+  SyntheticEntry(
+    'TJA0000005',
+    '2026-10-26 17:10:30',
+    'Withdrawal Charge',
+    withdrawn: 2900,
+  ),
+  SyntheticEntry(
+    'TJA0000006',
+    '2026-10-26 19:00:00',
+    'Airtime Purchase',
+    withdrawn: 10000,
+  ),
+  SyntheticEntry(
+    'TJA0000011',
+    '2026-10-26 20:00:00',
+    'Customer Transfer to 0700***003 - MARY WANJIRU',
+    withdrawn: 50000,
+    status: 'Failed',
+  ),
+  SyntheticEntry(
+    'TJA0000010',
+    '2026-10-27 08:05:00',
+    'Business Payment from 400001 - EXAMPLE SACCO via API',
+    paidIn: 500000,
+  ),
+];
+
+/// Closing balance of [syntheticOctober], in cents.
+const syntheticClosing = 779100;

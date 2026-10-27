@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pesaclarity/ujumbe-parsers/schema/statement-fixtures.schema.json",
+  "title": "ujumbe statement fixtures",
+  "description": "Synthetic statements, typeset into positioned words, and what reading them must produce.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack",
+    "statements"
+  ],
+  "properties": {
+    "pack": {
+      "type": "string"
+    },
+    "statements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "columns",
+          "pages",
+          "expect"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "columns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^>\\d+(\\.\\d+)?$"
+                }
+              ]
+            },
+            "description": "Left edge of each column, or \">\" and its right edge for right-aligned cells."
+          },
+          "pages": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            },
+            "description": "Each line is free text, or a list of cells, one per column. Synthetic text only."
+          },
+          "expect": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "period": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "opening_balance_minor": {
+                "type": "integer"
+              },
+              "closing_balance_minor": {
+                "type": "integer"
+              },
+              "reconciles": {
+                "type": "boolean"
+              },
+              "unread_lines": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "transactions": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

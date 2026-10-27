@@ -2,6 +2,7 @@ import 'package:yaml/yaml.dart';
 
 import 'time_format.dart';
 import 'version.dart';
+import 'yaml_reader.dart';
 
 /// The pack format version this engine reads.
 const supportedPackSchema = 1;
@@ -166,7 +167,7 @@ class ParserPack {
     if (doc is! YamlMap) {
       throw PackFormatException(source, ['Top level must be a mapping']);
     }
-    final r = _Reader(doc, problems);
+    final r = YamlFieldReader(doc, problems);
 
     r.checkKeys(const {
       'schema',
@@ -271,7 +272,7 @@ class ParserPack {
   ) {
     final problems = <String>[];
     if (node is! YamlMap) return (null, ['$at: must be a mapping']);
-    final r = _Reader(node, problems, prefix: '$at.');
+    final r = YamlFieldReader(node, problems, prefix: '$at.');
     r.checkKeys(const {
       'id',
       'type',
@@ -364,74 +365,4 @@ class ParserPack {
   static final _semver = RegExp(
     r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$',
   );
-}
-
-class _Reader {
-  _Reader(this.map, this.problems, {this.prefix = ''});
-
-  final YamlMap map;
-  final List<String> problems;
-  final String prefix;
-
-  void checkKeys(Set<String> allowed) {
-    for (final key in map.keys) {
-      if (!allowed.contains(key)) problems.add('$prefix$key: unknown field');
-    }
-  }
-
-  String? string(String key, {RegExp? pattern, bool optional = false}) {
-    final value = map[key];
-    if (value == null) {
-      if (!optional) problems.add('$prefix$key: is required');
-      return null;
-    }
-    if (value is! String || value.isEmpty) {
-      problems.add('$prefix$key: must be a non-empty string');
-      return null;
-    }
-    if (pattern != null && !pattern.hasMatch(value)) {
-      problems.add('$prefix$key: "$value" does not match ${pattern.pattern}');
-      return null;
-    }
-    return value;
-  }
-
-  int? integer(String key) {
-    final value = map[key];
-    if (value is! int) {
-      problems.add('$prefix$key: must be an integer');
-      return null;
-    }
-    return value;
-  }
-
-  bool? boolean(String key) {
-    final value = map[key];
-    if (value == null) return null;
-    if (value is! bool) {
-      problems.add('$prefix$key: must be true or false');
-      return null;
-    }
-    return value;
-  }
-
-  List<String>? stringList(String key) {
-    final value = map[key];
-    if (value is! YamlList || value.any((e) => e is! String || e.isEmpty)) {
-      problems.add('$prefix$key: must be a list of non-empty strings');
-      return null;
-    }
-    return value.cast<String>().toList();
-  }
-
-  MessageTimeFormat? timeFormat(String key, {bool optional = false}) {
-    final text = string(key, optional: optional);
-    if (text == null) return null;
-    try {
-      return MessageTimeFormat(text);
-    } on FormatException catch (e) {
-      problems.add('$prefix$key: ${e.message}');
-      return null;
-    }
-  }
 }

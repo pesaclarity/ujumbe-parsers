@@ -4,6 +4,10 @@ All notable changes to this package are listed here. Versions follow [semantic v
 
 ## Unreleased
 
+- Statement packs (`packs/<id>/statement.yaml`, schema 1, with JSON Schema): read statement PDFs from positioned words. `readTable` rebuilds the table from the header row (multi-word headers, right-aligned amounts, wrapped cells, rows across page breaks, skipped page chrome); `StatementReader` turns rows into transactions with the SMS dedupe key, folds fee rows into their payment, and checks every balance; `detectStatementPack` picks the layout.
+- The M-Pesa statement as the first statement pack, matching `MpesaStatementParser` on the same synthetic statements.
+- Statement fixtures typeset synthetic rows into pages (`typesetPage`), run by `tool/check_packs.dart`; statement packs are bundled as `bundledStatementPackSources`.
+- `MessageTimeFormat(..., dateOnly: true)` for dates without a time, such as a statement period.
 - `MpesaStatementParser` reads the text of an M-Pesa full statement (extracted from the PDF by the app) into transactions with the same dedupe key as SMS, folds fee rows into their payments, and reports the statement period, opening and closing balances, and any balance that does not follow from the row before it.
 - Signed pack releases for over-the-air updates: a signed `index.json` (with JSON Schema) lists each pack's version, minimum engine version, SHA-256 and signature file.
 - `PackUpdateVerifier` accepts only packs that are correctly signed, match the index, suit this engine and are newer than the installed copy, and gives a typed `PackRejectionReason` for the rest.

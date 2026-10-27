@@ -1,0 +1,82 @@
+# yaml-language-server: $schema=../../schema/statement-pack.schema.json
+# The Safaricom M-Pesa full statement (PDF). Column names and detail wording
+# follow the public statement layout; fixtures are synthetic.
+schema: 1
+id: mpesa_statement
+institution: mpesa
+name: M-Pesa statement
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+
+detect:
+  - '^\s*M-?PESA\s+STATEMENT\b'
+  - 'Receipt No\.?\s+Completion Time\s+Details'
+
+period: 'Statement Period:?\s+(?<start>\d{1,2} [A-Za-z]{3} \d{4})\s+-\s+(?<end>\d{1,2} [A-Za-z]{3} \d{4})'
+period_format: "d MMM yyyy"
+
+columns:
+  - key: reference
+    header: '^Receipt No\.?$'
+  - key: date
+    header: '^Completion Time$'
+    format: "yyyy-MM-dd HH:mm:ss"
+  - key: description
+    header: '^Details$'
+  - key: status
+    header: '^Transaction Status$'
+  - key: money_in
+    header: '^Paid In$'
+    align: right
+  # Withdrawals are printed with a minus sign.
+  - key: money_out
+    header: '^Withdrawn$'
+    align: right
+    negative: true
+  - key: balance
+    header: '^Balance$'
+    align: right
+
+row_starts_with: reference
+order: detect
+completed_status: '^Completed$'
+skip:
+  - '^Page \d+ of \d+'
+  - '^Disclaimer\b'
+
+# A payment's charge is a separate row with the same receipt.
+fees:
+  description: '^[A-Za-z ]+ Charge$'
+
+# First match wins.
+rules:
+  - id: paybill
+    type: paybill
+    pattern: '^Pay Bill(?: Online| Fuliza M-?Pesa)? to \d+ - (?<counterparty>.+?) Acc\.? ?(?<account>\S.*)$'
+  - id: till
+    type: till
+    pattern: '^Merchant Payment(?: Online| Fuliza M-?Pesa)? to \d+ - (?<counterparty>.+)$'
+  - id: sent
+    type: sent
+    pattern: '^Customer Transfer(?: Fuliza M-?Pesa)? to (?<account>\S+) - (?<counterparty>.+)$'
+  - id: received
+    type: received
+    pattern: '^(?:Funds received|Business Payment) from (?<account>\S+) - (?<counterparty>.+?)(?: via API.*)?$'
+  - id: withdrawal
+    type: withdrawal
+    pattern: '^Customer Withdrawal At Agent Till (?<account>\d+) - (?<counterparty>.+)$'
+  - id: airtime
+    type: airtime
+    pattern: '^(?:Airtime Purchase|Recharge for Customer|Buy Bundles?)\b'
+  - id: fuliza
+    type: fuliza
+    pattern: '^OverDraft of Credit Party\b'
+  - id: fuliza_repayment
+    type: fuliza_repayment
+    pattern: '^OD Loan Repayment\b'
+  - id: reversal
+    type: reversal
+    pattern: '\bReversal\b(?:.* of (?<account>[A-Z0-9]{10})\b)?'
+
+password_hint: mpesa_statement

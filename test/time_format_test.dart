@@ -48,4 +48,30 @@ void main() {
     expect(parseUtcOffset('-05:30'), const Duration(hours: -5, minutes: -30));
     expect(parseUtcOffset('3'), isNull);
   });
+
+  group('date-only formats', () {
+    test('parse to midnight', () {
+      expect(
+        MessageTimeFormat(
+          'd MMM yyyy',
+          dateOnly: true,
+        ).parse('1 Oct 2026', utcOffset: Duration.zero),
+        DateTime.utc(2026, 10),
+      );
+    });
+
+    test('must not hold a time, and need a full date', () {
+      for (final pattern in ['d MMM yyyy HH:mm', 'MMM yyyy', 'dd dd MM yyyy']) {
+        expect(
+          () => MessageTimeFormat(pattern, dateOnly: true),
+          throwsFormatException,
+          reason: pattern,
+        );
+      }
+    });
+
+    test('are refused where a time is needed', () {
+      expect(() => MessageTimeFormat('d MMM yyyy'), throwsFormatException);
+    });
+  });
 }
