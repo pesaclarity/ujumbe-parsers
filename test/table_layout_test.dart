@@ -45,6 +45,24 @@ void main() {
     ]);
   });
 
+  test('small marks such as * , and - stay on their line', () {
+    // Boxes as PDFium reports them: tight around each mark's ink.
+    final lines = pageLines(
+      const StatementPage([
+        PageWord('*', 222, 36.9, 224, 38.9),
+        PageWord('TJA0000001', 30, 36.9, 68, 42),
+        PageWord('-', 244, 39.6, 246, 40.3),
+        PageWord(',', 327.9, 41.1, 328.6, 42.9),
+        PageWord('JANE', 248, 36.9, 265, 42),
+        PageWord('NEXT', 30, 50.7, 50, 56),
+      ]),
+    );
+    expect(lines.map((l) => l.map((w) => w.text).join(' ')), [
+      'TJA0000001 * - JANE ,',
+      'NEXT',
+    ]);
+  });
+
   test('multi-word headers, wide amounts, wrapped text and page breaks', () {
     final header = [
       _w('Value', 20, 60),

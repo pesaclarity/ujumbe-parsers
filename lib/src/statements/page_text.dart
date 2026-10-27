@@ -43,30 +43,52 @@ class StatementPage {
 
 /// Groups [page]'s words into lines, top to bottom, each left to right.
 ///
-/// Words whose vertical centres lie within half a word height of a line's
-/// first word join that line, so words printed slightly higher or lower
-/// (different fonts, superscripts) stay on it.
+/// A word joins the line whose vertical span overlaps at least half of the
+/// word's own height, or half the line's when the line is shorter; the
+/// line's span then grows to cover the word. So punctuation, hyphens and
+/// asterisks, whose boxes are much smaller than letters', stay on their
+/// line, as do words printed slightly higher or lower.
 List<List<PageWord>> pageLines(StatementPage page) {
   final words = [...page.words.where((w) => w.text.trim().isNotEmpty)]
     ..sort((a, b) {
       final byY = a.centerY.compareTo(b.centerY);
       return byY != 0 ? byY : a.left.compareTo(b.left);
     });
-  final lines = <List<PageWord>>[];
+  final lines = <_Line>[];
   for (final word in words) {
     final line = lines.lastOrNull;
-    final anchor = line?.first;
-    final tolerance = anchor == null
-        ? 0
-        : (anchor.height > word.height ? anchor.height : word.height) / 2;
-    if (anchor != null && (word.centerY - anchor.centerY).abs() <= tolerance) {
-      line!.add(word);
+    if (line != null && line.takes(word)) {
+      line.add(word);
     } else {
-      lines.add([word]);
+      lines.add(_Line(word));
     }
   }
-  for (final line in lines) {
-    line.sort((a, b) => a.left.compareTo(b.left));
+  return [
+    for (final line in lines)
+      line.words..sort((a, b) => a.left.compareTo(b.left)),
+  ];
+}
+
+class _Line {
+  _Line(PageWord first) : top = first.top, bottom = first.bottom {
+    words.add(first);
   }
-  return lines;
+
+  final words = <PageWord>[];
+  double top, bottom;
+
+  bool takes(PageWord word) {
+    final overlap =
+        (word.bottom < bottom ? word.bottom : bottom) -
+        (word.top > top ? word.top : top);
+    final lineHeight = bottom - top;
+    final shorter = word.height < lineHeight ? word.height : lineHeight;
+    return overlap > 0 && overlap >= shorter / 2;
+  }
+
+  void add(PageWord word) {
+    words.add(word);
+    if (word.top < top) top = word.top;
+    if (word.bottom > bottom) bottom = word.bottom;
+  }
 }
