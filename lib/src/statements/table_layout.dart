@@ -43,17 +43,19 @@ class StatementTable {
 /// Rebuilds the statement table on [pages] using [pack]'s columns.
 ///
 /// On each page the header row is the first line where every column's
-/// header matches, in order. A left-aligned column starts just left of its
-/// header, since its values start where the header does and may run far to
-/// the right of it. A right-aligned column (amounts) starts halfway across
-/// the gap after the header to its left, since its values end where its
-/// header ends and may start to the left of it. A word belongs to the
-/// column its centre falls in, except that only numbers go in
-/// right-aligned columns: other text there joins the nearest left-aligned
-/// column to its left, as a long description does. Pages with
-/// no header row reuse the last header's columns. A line starts a new row
-/// when its [StatementPack.rowStartsWith] cell has text; other lines
-/// continue the row above. Lines matching [StatementPack.skip] and
+/// header matches, in order. The headers give a first guess at where each
+/// column starts: a left-aligned column just left of its header, a
+/// right-aligned column (amounts) halfway across the gap after the header
+/// to its left. Each guess then moves to the gutter, the widest x range no
+/// word of the table body crosses between the two headers' centres, because many statements centre their
+/// headers so values start well left of them or end well right of them.
+/// A word belongs to the column its centre falls in, except that only
+/// numbers go in right-aligned columns: other text there joins the nearest
+/// left-aligned column to its left. Pages with no header row reuse the last
+/// columns. A line starts a new row when its [StatementPack.rowStartsWith]
+/// cell has text (matching that column's pattern, if it has one); other
+/// lines continue the row above when they sit within two line heights of
+/// it, and are left out otherwise. Lines matching [StatementPack.skip] and
 /// repeated header rows are dropped.
 StatementTable readTable(List<StatementPage> pages, StatementPack pack) {
   final rows = <TableRow>[];
@@ -65,9 +67,13 @@ StatementTable readTable(List<StatementPage> pages, StatementPack pack) {
     final lines = pageLines(pages[p]);
     final header = _findHeader(lines, pack);
     if (header != null) {
-      bounds = header.bounds;
+      bounds = _snapToGutters(header, _bodyLines(lines, header, pack));
       headerFound = true;
     }
+    // The last line taken into the table on this page, to tell
+    // continuation lines from text further down such as footers. Lines
+    // just under a repeated header continue the previous page's last row.
+    var previous = header == null ? null : lines[header.line];
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
       final text = line.map((w) => w.text).join(' ');
@@ -80,9 +86,12 @@ StatementTable readTable(List<StatementPage> pages, StatementPack pack) {
         continue;
       }
       final cells = _cells(line, bounds, pack.columns);
-      if ((cells[pack.rowStartsWith] ?? '').isNotEmpty) {
+      if (_startsRow(cells, pack)) {
         rows.add(TableRow(p + 1, cells));
-      } else if (rows.isNotEmpty) {
+        previous = line;
+      } else if (rows.isNotEmpty &&
+          (previous == null || _follows(line, previous))) {
+        previous = line;
         final row = rows.last;
         cells.forEach((key, value) {
           final current = row.cells[key];
@@ -98,14 +107,112 @@ StatementTable readTable(List<StatementPage> pages, StatementPack pack) {
   return StatementTable(rows: rows, outside: outside, headerFound: headerFound);
 }
 
+bool _startsRow(Map<StatementColumnKey, String> cells, StatementPack pack) {
+  final value = cells[pack.rowStartsWith] ?? '';
+  if (value.isEmpty) return false;
+  final pattern = pack.column(pack.rowStartsWith)?.pattern;
+  return pattern == null || pattern.hasMatch(value);
+}
+
+/// Whether [line] sits close enough under [previous] to continue its row:
+/// at most two line heights below it. Text further down, such as a page
+/// footer, is left out.
+bool _follows(List<PageWord> line, List<PageWord> previous) {
+  double top(List<PageWord> l) =>
+      l.map((w) => w.top).reduce((a, b) => a < b ? a : b);
+  double bottom(List<PageWord> l) =>
+      l.map((w) => w.bottom).reduce((a, b) => a > b ? a : b);
+  final height = bottom(previous) - top(previous);
+  return top(line) - bottom(previous) <= 2 * height;
+}
+
 class _Header {
-  const _Header(this.line, this.bounds);
+  const _Header(this.line, this.bounds, this.spans);
 
   /// Index of the header line on its page.
   final int line;
 
-  /// Column boundaries: column i spans bounds[i] to bounds[i + 1].
+  /// Column boundaries guessed from the headers alone: column i spans
+  /// bounds[i] to bounds[i + 1].
   final List<double> bounds;
+
+  /// Each header's left and right edge.
+  final List<(double, double)> spans;
+}
+
+/// The page's table body: lines after the header, without skipped ones,
+/// up to the last line that starts a row, so footers are left out.
+List<List<PageWord>> _bodyLines(
+  List<List<PageWord>> lines,
+  _Header header,
+  StatementPack pack,
+) {
+  final body = <List<PageWord>>[];
+  var lastRowStart = -1;
+  for (var i = header.line + 1; i < lines.length; i++) {
+    final text = lines[i].map((w) => w.text).join(' ');
+    if (pack.skip.any((s) => s.hasMatch(text))) continue;
+    body.add(lines[i]);
+    final cells = _cells(lines[i], header.bounds, pack.columns);
+    if (_startsRow(cells, pack)) lastRowStart = body.length - 1;
+  }
+  return body.sublist(0, lastRowStart + 1);
+}
+
+/// Narrowest gutter that counts as a gap between columns, in points.
+const _minGutter = 1.0;
+
+/// Moves each boundary to the gutter: the widest x range that no word of
+/// the table body crosses, between the centres of the two headers on
+/// either side. Many statements centre headers over their columns, so the
+/// values start well left of their header or end well right of it; the
+/// gutters show where the columns really are. A boundary with no gutter
+/// near it keeps its header-based place.
+List<double> _snapToGutters(_Header header, List<List<PageWord>> body) {
+  final spans = [
+    for (final line in body)
+      for (final word in line) (word.left, word.right),
+  ]..sort((a, b) => a.$1.compareTo(b.$1));
+  final covered = <(double, double)>[];
+  for (final (left, right) in spans) {
+    final last = covered.lastOrNull;
+    if (last != null && left <= last.$2) {
+      if (right > last.$2) covered[covered.length - 1] = (last.$1, right);
+    } else {
+      covered.add((left, right));
+    }
+  }
+
+  final bounds = [...header.bounds];
+  for (var c = 1; c < bounds.length - 1; c++) {
+    // A header's centre is inside its column however it is aligned, so the
+    // boundary lies between the two centres.
+    final from = (header.spans[c - 1].$1 + header.spans[c - 1].$2) / 2;
+    final to = (header.spans[c].$1 + header.spans[c].$2) / 2;
+    final guess = bounds[c];
+    double? best;
+    var bestWidth = 0.0, bestDistance = double.infinity;
+    for (var i = 0; i + 1 < covered.length; i++) {
+      final gapStart = covered[i].$2 > from ? covered[i].$2 : from;
+      final gapEnd = covered[i + 1].$1 < to ? covered[i + 1].$1 : to;
+      final width = gapEnd - gapStart;
+      if (width < _minGutter) continue;
+      final distance = guess < gapStart
+          ? gapStart - guess
+          : guess > gapEnd
+          ? guess - gapEnd
+          : 0.0;
+      // The widest gap is the gutter; spaces between words inside a column
+      // are narrower. Equal widths go to the one nearer the guess.
+      if (width > bestWidth || width == bestWidth && distance < bestDistance) {
+        bestWidth = width;
+        bestDistance = distance;
+        best = (gapStart + gapEnd) / 2;
+      }
+    }
+    if (best != null && best > bounds[c - 1]) bounds[c] = best;
+  }
+  return bounds;
 }
 
 /// The longest run of words a single header may span.
@@ -137,7 +244,7 @@ _Header? _findHeader(List<List<PageWord>> lines, StatementPack pack) {
       );
     }
     bounds.add(double.infinity);
-    return _Header(i, bounds);
+    return _Header(i, bounds, spans);
   }
   return null;
 }

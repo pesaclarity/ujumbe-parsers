@@ -160,7 +160,7 @@ class StatementReader {
     // their balances were applied.
     if (newestFirst) lines = lines.reversed.toList();
 
-    final completed = lines.where(_isCompleted).toList();
+    final completed = _chainSameTime(lines.where(_isCompleted).toList());
     final breaks = <StatementBalanceBreak>[];
     for (var i = 1; i < completed.length; i++) {
       final before = completed[i - 1].balanceMinor;
@@ -194,6 +194,81 @@ class StatementReader {
       balanceBreaks: List.unmodifiable(breaks),
       unreadLines: List.unmodifiable(unread),
     );
+  }
+
+  /// Puts rows that share a time in the order their balances follow.
+  ///
+  /// Statements print rows from the same second in no reliable order (an
+  /// overdraft draw, the payment it funds and the fee can come in any
+  /// order). Each such group is put in the order where the most rows have
+  /// a printed balance equal to the previous balance plus their amount.
+  static List<StatementLine> _chainSameTime(List<StatementLine> rows) {
+    final result = <StatementLine>[];
+    var start = 0;
+    while (start < rows.length) {
+      var end = start;
+      while (end < rows.length && rows[end].time == rows[start].time) {
+        end++;
+      }
+      final group = rows.sublist(start, end);
+      result.addAll(
+        group.length == 1
+            ? group
+            : _chain(group, result.lastOrNull?.balanceMinor),
+      );
+      start = end;
+    }
+    return result;
+  }
+
+  /// Groups larger than this keep their printed order: searching every
+  /// order would take too long, and such groups are rare.
+  static const _maxChainedGroup = 8;
+
+  /// The order of [group] in which the most rows follow from the balance
+  /// before them, starting from [before] when it is known. Ties keep the
+  /// printed order.
+  static List<StatementLine> _chain(List<StatementLine> group, int? before) {
+    if (group.length > _maxChainedGroup) return group;
+    bool follows(int? previous, StatementLine row) =>
+        previous != null &&
+        row.balanceMinor != null &&
+        previous + row.netMinor == row.balanceMinor;
+
+    var best = group;
+    var bestLinks = -1;
+    final used = List.filled(group.length, false);
+    final path = <StatementLine>[];
+
+    // Depth-first over orders, trying linking rows first; stops at the
+    // first order where every row links.
+    bool search(int? previous, int links) {
+      if (path.length == group.length) {
+        if (links > bestLinks) {
+          bestLinks = links;
+          best = [...path];
+        }
+        return links == group.length - (before == null ? 1 : 0);
+      }
+      final order = [
+        for (var i = 0; i < group.length; i++)
+          if (!used[i] && follows(previous, group[i])) i,
+        for (var i = 0; i < group.length; i++)
+          if (!used[i] && !follows(previous, group[i])) i,
+      ];
+      for (final i in order) {
+        used[i] = true;
+        path.add(group[i]);
+        final linked = follows(previous, group[i]) ? 1 : 0;
+        if (search(group[i].balanceMinor, links + linked)) return true;
+        path.removeLast();
+        used[i] = false;
+      }
+      return false;
+    }
+
+    search(before, 0);
+    return best;
   }
 
   (DateTime?, DateTime?) _period(List<String> outside) {

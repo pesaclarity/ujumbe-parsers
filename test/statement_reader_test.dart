@@ -7,7 +7,7 @@ import 'support/synthetic_statement.dart';
 final _mpesa = loadBundledStatementPack('mpesa_statement');
 
 void main() {
-  group('the M-Pesa pack matches the text reader', () {
+  group('a synthetic October', () {
     for (final linesPerPage in [3, 7, 100]) {
       for (final newestFirst in [true, false]) {
         for (final detailsWidth in [20, 34]) {
@@ -16,39 +16,94 @@ void main() {
               '${newestFirst ? 'newest' : 'oldest'} first, '
               'details wrapped at $detailsWidth';
           test(label, () {
-            final fromPages = StatementReader(_mpesa).read(
-              syntheticStatementPages(
-                syntheticOctober,
-                openingBalance: syntheticOpening,
-                linesPerPage: linesPerPage,
-                newestFirst: newestFirst,
-                detailsWidth: detailsWidth,
+            _expectOctober(
+              StatementReader(_mpesa).read(
+                syntheticStatementPages(
+                  syntheticOctober,
+                  openingBalance: syntheticOpening,
+                  linesPerPage: linesPerPage,
+                  newestFirst: newestFirst,
+                  detailsWidth: detailsWidth,
+                ),
               ),
-            );
-            final fromText = const MpesaStatementParser().parse(
-              syntheticStatement(
-                syntheticOctober,
-                openingBalance: syntheticOpening,
-                linesPerPage: linesPerPage,
-                newestFirst: newestFirst,
-                detailsWidth: detailsWidth,
-              ),
-            );
-
-            expect(fromPages.reconciles, isTrue);
-            expect(fromPages.periodStart, fromText.periodStart);
-            expect(fromPages.periodEnd, fromText.periodEnd);
-            expect(fromPages.openingBalanceMinor, syntheticOpening);
-            expect(fromPages.closingBalanceMinor, syntheticClosing);
-            expect(fromPages.lines, hasLength(fromText.rows.length));
-            expect(
-              fromPages.transactions.map(_fields),
-              fromText.transactions.map(_fields),
             );
           });
         }
       }
     }
+  });
+
+  test('rows from the same second follow their balances', () {
+    // An overdraft draw, the payment it funds and the fee, all at one
+    // second, printed in an order that does not match their balances.
+    const time = '2026-10-26 21:00:00';
+    const columns = mpesaColumns;
+    final page = typesetPage([
+      'M-PESA STATEMENT',
+      const [
+        'Receipt No.',
+        'Completion Time',
+        'Details',
+        'Transaction Status',
+        'Paid In',
+        'Withdrawn',
+        'Balance',
+      ],
+      // Newest first as printed, but the same-second rows are shuffled.
+      const [
+        'TJA0000099',
+        '2026-10-26 22:00:00',
+        'Airtime Purchase',
+        'Completed',
+        '',
+        '-5.00',
+        '0.00',
+      ],
+      const [
+        'TJA0000008',
+        time,
+        'Merchant Payment Online to 5000002',
+        'Completed',
+        '',
+        '-300.00',
+        '10.00',
+      ],
+      const ['', '', '- EXAMPLE CAFE', '', '', '', ''],
+      const [
+        'TJA0000007',
+        time,
+        'OverDraft of Credit Party',
+        'Completed',
+        '300.00',
+        '',
+        '310.00',
+      ],
+      const [
+        'TJA0000008',
+        time,
+        'Merchant Payment Charge',
+        'Completed',
+        '',
+        '-5.00',
+        '5.00',
+      ],
+      const [
+        'TJA0000006',
+        '2026-10-26 19:00:00',
+        'Airtime Purchase',
+        'Completed',
+        '',
+        '-5.00',
+        '10.00',
+      ],
+    ], columns);
+    final read = StatementReader(_mpesa).read([page]);
+    expect(read.balanceBreaks, isEmpty);
+    expect(read.reconciles, isTrue);
+    expect(read.closingBalanceMinor, 0);
+    final till = read.transactions.firstWhere((t) => t.receipt == 'TJA0000008');
+    expect(till.feeMinor, 500);
+    expect(till.balanceMinor, 500);
   });
 
   test('statement rows share the SMS dedupe key', () {
@@ -248,19 +303,63 @@ void main() {
   });
 }
 
-Map<String, Object?> _fields(ParsedTransaction t) => {
-  'ruleId': t.ruleId.replaceFirst('statement_', ''),
-  'type': t.type,
-  'direction': t.direction,
-  'amount': t.amountMinor,
-  'fee': t.feeMinor,
-  'balance': t.balanceMinor,
-  'receipt': t.receipt,
-  'counterparty': t.counterparty,
-  'account': t.account,
-  'time': t.time,
-  'dedupe': t.dedupeKey,
-};
+void _expectOctober(ParsedStatement s) {
+  expect(s.unreadLines, isEmpty);
+  expect(s.balanceBreaks, isEmpty);
+  expect(s.reconciles, isTrue);
+  expect(s.periodStart, DateTime.utc(2026, 10));
+  expect(s.periodEnd, DateTime.utc(2026, 10, 31));
+  expect(s.openingBalanceMinor, syntheticOpening);
+  expect(s.closingBalanceMinor, syntheticClosing);
+  expect(s.lines, hasLength(syntheticOctober.length));
+
+  final t = s.transactions;
+  expect(t.map((x) => x.receipt), [
+    'TJA0000003',
+    'TJA0000001',
+    'TJA0000002',
+    'TJA0000004',
+    'TJA0000005',
+    'TJA0000006',
+    'TJA0000010',
+  ]);
+  expect(t.map((x) => x.type), [
+    TransactionType.received,
+    TransactionType.sent,
+    TransactionType.paybill,
+    TransactionType.till,
+    TransactionType.withdrawal,
+    TransactionType.airtime,
+    TransactionType.received,
+  ]);
+  expect(t.map((x) => x.feeMinor), [null, 1500, 1500, null, 2900, null, null]);
+  expect(t.every((x) => x.packId == 'mpesa' && x.currency == 'KES'), isTrue);
+
+  final received = t[0];
+  expect(received.direction, Direction.incoming);
+  expect(received.amountMinor, 200000);
+  expect(received.counterparty, 'JOHN KAMAU');
+  expect(received.account, '0700***002');
+  expect(received.time, DateTime.utc(2026, 10, 26, 5, 2, 10));
+  expect(received.balanceMinor, 700000);
+
+  final sent = t[1];
+  expect(sent.direction, Direction.outgoing);
+  expect(sent.amountMinor, 150000);
+  expect(sent.counterparty, 'JANE DOE');
+  expect(sent.account, '0700***001');
+  expect(sent.balanceMinor, 548500);
+  expect(sent.ruleId, 'statement_sent');
+
+  expect(t[2].counterparty, 'EXAMPLE POWER LTD');
+  expect(t[2].account, '1234567890');
+  expect(t[2].balanceMinor, 427000);
+  expect(t[3].counterparty, 'EXAMPLE GROCERS');
+  expect(t[4].counterparty, 'EXAMPLE AGENT SHOP NAIROBI');
+  expect(t[4].account, '123456');
+  expect(t[6].counterparty, 'EXAMPLE SACCO');
+  expect(t[6].account, '400001');
+}
 
 const _bankPack = r'''
 schema: 1

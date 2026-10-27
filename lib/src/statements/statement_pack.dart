@@ -73,6 +73,7 @@ class StatementColumn {
     this.format,
     this.negative = false,
     this.align = ColumnAlign.left,
+    this.pattern,
   });
 
   /// What the column holds.
@@ -92,6 +93,12 @@ class StatementColumn {
 
   /// See [ColumnAlign].
   final ColumnAlign align;
+
+  /// What a value in this column looks like. For the
+  /// [StatementPack.rowStartsWith] column, a line starts a row only when its
+  /// cell matches, so page footers that reach into the column are not taken
+  /// for rows.
+  final RegExp? pattern;
 }
 
 /// How a single [StatementColumnKey.amount] column shows direction.
@@ -456,7 +463,14 @@ class StatementPack {
       }
       final before = problems.length;
       final r = YamlFieldReader(item, problems, prefix: '$at.');
-      r.checkKeys(const {'key', 'header', 'format', 'negative', 'align'});
+      r.checkKeys(const {
+        'key',
+        'header',
+        'format',
+        'negative',
+        'align',
+        'pattern',
+      });
       final keyText = r.string('key');
       final key = keyText == null ? null : StatementColumnKey.fromCode(keyText);
       if (keyText != null && key == null) {
@@ -466,6 +480,14 @@ class StatementPack {
         problems.add('$at.key: "${key.code}" appears twice');
       }
       final header = _regex(item, 'header', problems, at: '$at.');
+      final valuePattern = _regex(
+        item,
+        'pattern',
+        problems,
+        at: '$at.',
+        optional: true,
+        ignoreCase: false,
+      );
       String? format;
       if (key == StatementColumnKey.date || key == StatementColumnKey.time) {
         format = r.string('format');
@@ -487,6 +509,7 @@ class StatementPack {
           header: header!,
           format: format,
           negative: negative,
+          pattern: valuePattern,
           align: align!,
         ),
       );

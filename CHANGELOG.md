@@ -5,10 +5,12 @@ All notable changes to this package are listed here. Versions follow [semantic v
 ## Unreleased
 
 - Statement packs (`packs/<id>/statement.yaml`, schema 1, with JSON Schema): read statement PDFs from positioned words. `readTable` rebuilds the table from the header row (multi-word headers, right-aligned amounts, wrapped cells, rows across page breaks, skipped page chrome); `StatementReader` turns rows into transactions with the SMS dedupe key, folds fee rows into their payment, and checks every balance; `detectStatementPack` picks the layout.
-- The M-Pesa statement as the first statement pack, matching `MpesaStatementParser` on the same synthetic statements.
+- The M-Pesa statement as the first statement pack, with rules for the wording of the real statement (transfers, Pochi la Biashara, bank transfers in and out, unit trusts, M-Shwari, bundles, Fuliza).
+- Column boundaries follow the gutters in the table body, so headers centred over their columns work; a column can carry a value `pattern`, and lines far below a row are not taken as its continuation, so page footers stay out.
+- Rows that share a second are put in the order their balances follow, since statements print them in no reliable order.
+- Removed `MpesaStatementParser`, the text-only reader the statement packs replace.
 - Statement fixtures typeset synthetic rows into pages (`typesetPage`), run by `tool/check_packs.dart`; statement packs are bundled as `bundledStatementPackSources`.
 - `MessageTimeFormat(..., dateOnly: true)` for dates without a time, such as a statement period.
-- `MpesaStatementParser` reads the text of an M-Pesa full statement (extracted from the PDF by the app) into transactions with the same dedupe key as SMS, folds fee rows into their payments, and reports the statement period, opening and closing balances, and any balance that does not follow from the row before it.
 - Signed pack releases for over-the-air updates: a signed `index.json` (with JSON Schema) lists each pack's version, minimum engine version, SHA-256 and signature file.
 - `PackUpdateVerifier` accepts only packs that are correctly signed, match the index, suit this engine and are newer than the installed copy, and gives a typed `PackRejectionReason` for the rest.
 - Optional `min_engine` field in `pack.yaml`; `engineVersion` and `compareVersions`.

@@ -129,6 +129,89 @@ void main() {
     expect(second[StatementColumnKey.moneyOut], '');
   });
 
+  test('centred headers: columns follow the gutters in the body', () {
+    // Like the real M-Pesa layout: each header sits in the middle of its
+    // column, so values start well left of it or end well right of it.
+    final pack = StatementPack.fromYaml(r'''
+schema: 1
+id: centred
+institution: example
+name: Centred
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+detect: ['.']
+columns:
+  - { key: reference, header: '^Receipt No\.$' }
+  - { key: date, header: '^Completion Time$', format: 'yyyy-MM-dd HH:mm:ss' }
+  - { key: description, header: '^Details$' }
+  - { key: status, header: '^Transaction Status$' }
+  - { key: money_in, header: '^Paid In$', align: right }
+  - { key: money_out, header: '^Withdrawn$', align: right, negative: true }
+  - { key: balance, header: '^Balance$', align: right }
+row_starts_with: reference
+skip: ['^Page \d+ of \d+$']
+''');
+    PageWord at(String text, double left, double top) =>
+        PageWord(text, left, top, left + text.length * 3.6, top + 7);
+    final page = StatementPage([
+      at('Receipt', 51, 60),
+      at('No.', 80, 60),
+      at('Completion', 111, 60),
+      at('Time', 153, 60),
+      at('Details', 216, 60),
+      at('Transaction', 282, 60),
+      at('Status', 326, 60),
+      at('Paid', 374, 60),
+      at('In', 391, 60),
+      at('Withdrawn', 436, 60),
+      at('Balance', 511, 60),
+      // A payment: details start 38 points left of their header.
+      at('TJA0000001', 39, 80),
+      at('2026-10-26', 108, 80),
+      at('09:15:42', 145, 80),
+      at('Merchant', 178, 80),
+      at('Payment', 211, 80),
+      at('to', 241, 80),
+      at('Completed', 283, 80),
+      at('-1,500.00', 455, 80),
+      at('5,500.00', 528, 80),
+      at('5000001', 178, 91),
+      at('-', 205, 91),
+      at('EXAMPLE', 211, 91),
+      // Money in: the amount ends 21 points right of its header.
+      at('TJA0000002', 39, 102),
+      at('2026-10-26', 108, 102),
+      at('10:00:00', 145, 102),
+      at('Funds', 178, 102),
+      at('received', 199, 102),
+      at('Completed', 283, 102),
+      at('2,000.00', 388, 102),
+      at('7,500.00', 528, 102),
+      at('Page', 39, 140),
+      at('1', 58, 140),
+      at('of', 64, 140),
+      at('1', 73, 140),
+    ]);
+    final table = readTable([page], pack);
+    expect(table.rows, hasLength(2));
+    final [payment, received] = table.rows;
+    expect(payment[StatementColumnKey.date], '2026-10-26 09:15:42');
+    expect(
+      payment[StatementColumnKey.description],
+      'Merchant Payment to 5000001 - EXAMPLE',
+    );
+    expect(payment[StatementColumnKey.status], 'Completed');
+    expect(payment[StatementColumnKey.moneyOut], '-1,500.00');
+    expect(payment[StatementColumnKey.balance], '5,500.00');
+    expect(received[StatementColumnKey.moneyIn], '2,000.00');
+    expect(received[StatementColumnKey.moneyOut], '');
+
+    final read = StatementReader(pack).read([page]);
+    expect(read.lines, hasLength(2));
+    expect(read.unreadLines, isEmpty);
+  });
+
   test('without a header row nothing is read as a row', () {
     final table = readTable([
       StatementPage([_w('01/10/2026', 20, 80), _w('TEXT', 100, 80)]),

@@ -46,10 +46,11 @@ switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
 }
 ```
 
-Statements backfill history and check balances. The app extracts the text from the PDF (and handles its password); the engine reads the text:
+Statements backfill history and check balances. The app extracts each page's words with their positions from the PDF (and handles its password); the engine picks the layout and reads it:
 
 ```dart
-final statement = const MpesaStatementParser().parse(extractedText);
+final pack = detectStatementPack(pages, loadBundledStatementPacks());
+final statement = StatementReader(pack!).read(pages);
 statement.transactions;        // same dedupeKey as the matching SMS
 statement.openingBalanceMinor; // and closingBalanceMinor, periodStart, periodEnd
 if (!statement.reconciles) {
@@ -85,7 +86,6 @@ lib/
   src/bundled_packs.g.dart generated from packs/; do not edit
   src/pack.dart          pack model and validation
   src/parser.dart        sender filter, parsing, dedupe key, raw-text hash
-  src/mpesa_statement.dart M-Pesa statement text reader (replaced by statement packs)
   src/statements/        statement packs: positioned page text, table layout,
                          pack format, reader, fixtures and the typesetter
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass

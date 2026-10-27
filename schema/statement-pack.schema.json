@@ -114,6 +114,11 @@
               "right"
             ],
             "description": "right for amounts: values end where the header ends."
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a value in the column looks like; a row starts only when its row_starts_with cell matches."
           }
         }
       }
