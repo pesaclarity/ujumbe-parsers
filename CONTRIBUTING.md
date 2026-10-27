@@ -38,7 +38,8 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 
 ## Commits and pull requests
 
-- Small, focused pull requests with a short description of what changed and why.
+- Small, focused pull requests against `dev`, with a short description of what changed and why. `main` takes only `dev` and release pull requests (see [docs/RELEASING.md](docs/RELEASING.md)).
+- Pull request titles follow [Conventional Commits](https://www.conventionalcommits.org): `feat: add Equity Bank pack`, `fix: …`, `feat!: …` for a breaking change. They set the next version and the changelog.
 - Commit messages: one short line in the imperative, e.g. "Add Equity Bank pack".
 - New dependencies need a reason in the pull request; the engine must stay free of Flutter.
 

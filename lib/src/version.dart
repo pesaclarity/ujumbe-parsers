@@ -2,7 +2,7 @@
 ///
 /// Packs and the pack index name the oldest engine that can read them; a
 /// phone compares that against this value before using a downloaded pack.
-const engineVersion = '0.1.0';
+const engineVersion = '0.1.0'; // x-release-please-version
 
 final _semver = RegExp(
   r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$',

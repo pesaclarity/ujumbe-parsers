@@ -1,18 +1,29 @@
 name: Release packs
 
 # Signs the packs and publishes them as release assets for over-the-air
-# updates. Never triggered by pull requests: only a pushed v* tag, or a
-# manual run started from a tag, can reach the signing key.
+# updates. Never triggered by pull requests: only a release tagged by
+# release-please (release-please.yml), a pushed v* tag, or a manual run
+# started from a tag can reach the signing key.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+  # A tag pushed with the workflow token does not start workflows on its own,
+  # so release-please.yml calls this with the tag it made.
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
 
 permissions:
   contents: read
 
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -29,20 +40,19 @@ jobs:
       contents: write
     steps:
       - name: Require a tag
-        if: github.ref_type != 'tag'
+        if: github.ref_type != 'tag' && !inputs.tag
         run: |
           echo "::error::Start this workflow from a v* tag, not a branch."
           exit 1
       - uses: actions/checkout@v4
         with:
+          ref: ${{ env.TAG }}
           persist-credentials: false
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
       - run: dart pub get
       - name: Tag matches the package version
-        env:
-          TAG: ${{ github.ref_name }}
         run: |
           version="$(sed -n 's/^version: *//p' pubspec.yaml)"
           if [ "$TAG" != "v$version" ]; then
@@ -68,7 +78,6 @@ jobs:
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" build/release/* --repo "$GITHUB_REPOSITORY" --clobber
