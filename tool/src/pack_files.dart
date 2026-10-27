@@ -4,7 +4,13 @@ import 'package:ujumbe/ujumbe.dart';
 
 /// A pack directory under `packs/`, with its pack and fixtures loaded.
 class PackDirectory {
-  PackDirectory._(this.directory, this.pack, this.fixtures);
+  PackDirectory._(
+    this.directory,
+    this.pack,
+    this.fixtures, {
+    this.statementPack,
+    this.statementFixtures,
+  });
 
   /// Loads `pack.yaml` and `fixtures.yaml` from [directory].
   ///
@@ -32,7 +38,39 @@ class PackDirectory {
       fixturesFile.readAsStringSync(),
       source: fixturesFile.path,
     );
-    return PackDirectory._(directory, pack, fixtures);
+    final statementFile = File('${directory.path}/statement.yaml');
+    final statementFixturesFile = File(
+      '${directory.path}/statement_fixtures.yaml',
+    );
+    StatementPack? statementPack;
+    StatementFixtures? statementFixtures;
+    if (statementFile.existsSync()) {
+      if (!statementFixturesFile.existsSync()) {
+        throw PackFormatException(statementFixturesFile.path, [
+          'file is missing',
+        ]);
+      }
+      statementPack = StatementPack.fromYaml(
+        statementFile.readAsStringSync(),
+        source: statementFile.path,
+      );
+      if (statementPack.institution != pack.id) {
+        throw PackFormatException(statementFile.path, [
+          'institution "${statementPack.institution}" must be "${pack.id}"',
+        ]);
+      }
+      statementFixtures = StatementFixtures.fromYaml(
+        statementFixturesFile.readAsStringSync(),
+        source: statementFixturesFile.path,
+      );
+    }
+    return PackDirectory._(
+      directory,
+      pack,
+      fixtures,
+      statementPack: statementPack,
+      statementFixtures: statementFixtures,
+    );
   }
 
   /// Where the pack lives.
@@ -43,6 +81,12 @@ class PackDirectory {
 
   /// Its synthetic samples.
   final PackFixtures fixtures;
+
+  /// The institution's statement pack (`statement.yaml`), if it has one.
+  final StatementPack? statementPack;
+
+  /// Synthetic statements for [statementPack].
+  final StatementFixtures? statementFixtures;
 }
 
 /// Every pack directory under [root], sorted by name.

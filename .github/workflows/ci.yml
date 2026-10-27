@@ -45,3 +45,5 @@ jobs:
       - run: pip install check-jsonschema==0.38.2
       - run: check-jsonschema --schemafile schema/pack.schema.json packs/*/pack.yaml
       - run: check-jsonschema --schemafile schema/fixtures.schema.json packs/*/fixtures.yaml
+      - run: check-jsonschema --schemafile schema/statement-pack.schema.json packs/*/statement.yaml
+      - run: check-jsonschema --schemafile schema/statement-fixtures.schema.json packs/*/statement_fixtures.yaml

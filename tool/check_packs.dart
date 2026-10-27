@@ -27,6 +27,23 @@ void main(List<String> args) {
           stdout.writeln('  - $f');
         }
       }
+      final statement = loaded.statementPack;
+      if (statement != null) {
+        final statementReport = loaded.statementFixtures!.run(statement);
+        final statementLabel = '${statement.id} ${statement.version}';
+        if (statementReport.passed) {
+          stdout.writeln(
+            'PASS $statementLabel '
+            '(${statementReport.sampleCount} statements)',
+          );
+        } else {
+          failed++;
+          stdout.writeln('FAIL $statementLabel');
+          for (final f in statementReport.failures) {
+            stdout.writeln('  - $f');
+          }
+        }
+      }
     } on PackFormatException catch (e) {
       failed++;
       stdout.writeln('FAIL $e');

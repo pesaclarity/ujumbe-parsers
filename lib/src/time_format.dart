@@ -11,7 +11,10 @@
 /// every phone, whatever its locale.
 class MessageTimeFormat {
   /// Compiles [pattern]. Throws [FormatException] if it is not supported.
-  factory MessageTimeFormat(String pattern) {
+  ///
+  /// With [dateOnly], the pattern has a day, month and year but no time,
+  /// and parsed values fall at midnight, as for a statement period.
+  factory MessageTimeFormat(String pattern, {bool dateOnly = false}) {
     final tokens = <String>[];
     final buffer = StringBuffer('^');
     var i = 0;
@@ -48,7 +51,7 @@ class MessageTimeFormat {
       }
     }
     buffer.write(r'$');
-    _checkComplete(tokens, pattern);
+    _checkComplete(tokens, pattern, dateOnly: dateOnly);
     return MessageTimeFormat._(
       pattern,
       RegExp(buffer.toString(), caseSensitive: false),
@@ -96,11 +99,13 @@ class MessageTimeFormat {
           pm = value.toLowerCase() == 'pm';
       }
     }
+    hour ??= 0;
+    minute ??= 0;
     if (pm != null) {
-      if (hour! < 1 || hour > 12) return null;
+      if (hour < 1 || hour > 12) return null;
       hour = hour % 12 + (pm ? 12 : 0);
     }
-    if (month! < 1 || month > 12 || hour! > 23 || minute! > 59 || second > 59) {
+    if (month! < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) {
       return null;
     }
     final local = DateTime.utc(year!, month, day!, hour, minute, second);
@@ -108,17 +113,31 @@ class MessageTimeFormat {
     return local.subtract(utcOffset);
   }
 
-  static void _checkComplete(List<String> tokens, String pattern) {
+  static void _checkComplete(
+    List<String> tokens,
+    String pattern, {
+    required bool dateOnly,
+  }) {
     bool has(Set<String> any) => tokens.any(any.contains);
+    final hasDate =
+        has({'d', 'dd'}) && has({'M', 'MM', 'MMM'}) && has({'yy', 'yyyy'});
+    final unique = tokens.toSet().length == tokens.length;
+    if (dateOnly) {
+      if (hasDate && unique && !has({'H', 'HH', 'h', 'hh', 'mm', 'ss', 'a'})) {
+        return;
+      }
+      throw FormatException(
+        'Date format needs exactly one day, month and year field and no time',
+        pattern,
+      );
+    }
     final twelveHour = has({'h', 'hh'});
     final ok =
-        has({'d', 'dd'}) &&
-        has({'M', 'MM', 'MMM'}) &&
-        has({'yy', 'yyyy'}) &&
+        hasDate &&
         has({'H', 'HH', 'h', 'hh'}) &&
         has({'mm'}) &&
         twelveHour == has({'a'}) &&
-        tokens.toSet().length == tokens.length;
+        unique;
     if (!ok) {
       throw FormatException(
         'Time format needs exactly one day, month, year, hour and minute '

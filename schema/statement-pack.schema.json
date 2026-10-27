@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pesaclarity/ujumbe-parsers/schema/statement-pack.schema.json",
+  "title": "ujumbe statement pack",
+  "description": "How to read one statement layout from positioned PDF text. The engine checks the rules this schema cannot express, such as which columns go together.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "institution",
+    "name",
+    "version",
+    "currency",
+    "utc_offset",
+    "detect",
+    "columns",
+    "row_starts_with"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "institution": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "The SMS pack id of the same institution."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+"
+    },
+    "min_engine": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "utc_offset": {
+      "type": "string",
+      "pattern": "^[+-]\\d{2}:\\d{2}$"
+    },
+    "detect": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A Dart regular expression."
+      },
+      "description": "Any match on the first page selects this pack."
+    },
+    "period": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Captures the period's start and end dates as named groups."
+    },
+    "period_format": {
+      "type": "string",
+      "minLength": 1
+    },
+    "columns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "header"
+        ],
+        "properties": {
+          "key": {
+            "enum": [
+              "reference",
+              "date",
+              "time",
+              "description",
+              "status",
+              "money_in",
+              "money_out",
+              "amount",
+              "marker",
+              "balance"
+            ]
+          },
+          "header": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Matches the column's header text, its words joined by single spaces."
+          },
+          "format": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Date or time pattern for date and time columns."
+          },
+          "negative": {
+            "type": "boolean",
+            "description": "Amounts carry a meaningless minus sign (M-Pesa withdrawals)."
+          },
+          "align": {
+            "enum": [
+              "left",
+              "right"
+            ],
+            "description": "right for amounts: values end where the header ends."
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a value in the column looks like; a row starts only when its row_starts_with cell matches."
+          }
+        }
+      }
+    },
+    "row_starts_with": {
+      "enum": [
+        "reference",
+        "date",
+        "time",
+        "description",
+        "status",
+        "money_in",
+        "money_out",
+        "amount",
+        "marker",
+        "balance"
+      ]
+    },
+    "order": {
+      "enum": [
+        "newest_first",
+        "oldest_first",
+        "detect"
+      ]
+    },
+    "completed_status": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A Dart regular expression."
+    },
+    "skip": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A Dart regular expression."
+      }
+    },
+    "fees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A Dart regular expression."
+        }
+      }
+    },
+    "amount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "negative_is": {
+          "enum": [
+            "in",
+            "out"
+          ]
+        },
+        "marker_out": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A Dart regular expression."
+        },
+        "marker_in": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A Dart regular expression."
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type",
+          "pattern"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "sent",
+              "received",
+              "paybill",
+              "till",
+              "withdrawal",
+              "airtime",
+              "fuliza",
+              "fuliza_repayment",
+              "reversal",
+              "bank"
+            ]
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Matches the description; may capture counterparty and account."
+          },
+          "ignore_case": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "password_hint": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Key of the app's approved password hint."
+    }
+  }
+}

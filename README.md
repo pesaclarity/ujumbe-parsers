@@ -46,10 +46,11 @@ switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
 }
 ```
 
-Statements backfill history and check balances. The app extracts the text from the PDF (and handles its password); the engine reads the text:
+Statements backfill history and check balances. The app extracts each page's words with their positions from the PDF (and handles its password); the engine picks the layout and reads it:
 
 ```dart
-final statement = const MpesaStatementParser().parse(extractedText);
+final pack = detectStatementPack(pages, loadBundledStatementPacks());
+final statement = StatementReader(pack!).read(pages);
 statement.transactions;        // same dedupeKey as the matching SMS
 statement.openingBalanceMinor; // and closingBalanceMinor, periodStart, periodEnd
 if (!statement.reconciles) {
@@ -85,7 +86,8 @@ lib/
   src/bundled_packs.g.dart generated from packs/; do not edit
   src/pack.dart          pack model and validation
   src/parser.dart        sender filter, parsing, dedupe key, raw-text hash
-  src/mpesa_statement.dart M-Pesa statement text to transactions and balances
+  src/statements/        statement packs: positioned page text, table layout,
+                         pack format, reader, fixtures and the typesetter
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass
   src/signing.dart       Ed25519 pack signing and verification
   src/pack_updates.dart  signed pack index and over-the-air update checks
@@ -95,7 +97,9 @@ lib/
 packs/<institution>/
   pack.yaml              the rules
   fixtures.yaml          synthetic samples and expected fields
-schema/                  JSON Schema for pack.yaml, fixtures.yaml and the release index.json
+  statement.yaml         optional: how to read the institution's statement PDF
+  statement_fixtures.yaml synthetic statements and what they must read as
+schema/                  JSON Schema for the pack, fixture and statement files and the release index.json
 tool/
   check_packs.dart       validate packs and run all fixtures
   bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
@@ -103,7 +107,7 @@ tool/
   build_release.dart     build and sign a release: packs, index.json and signatures
 docs/RELEASING.md        release steps, key custody and rotation
 test/                    engine unit tests and a test over every pack
-  support/               synthetic statement generator
+  support/               synthetic statement generators (text and positioned pages)
 ```
 
 ## Adding an institution
@@ -129,6 +133,16 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
 5. **Open a pull request** naming the institution and which message types you covered.
 
 Bump a pack's `version` whenever its rules change. Maintainers sign released packs; contributors never need a key.
+
+### Adding a statement layout
+
+Statement PDFs are read from each word's position on the page, so columns and wrapped descriptions survive. The app extracts the words; a statement pack says how to read them. The full design is in the [statement import spec](https://github.com/pesaclarity/docs/blob/main/spec/statement-import.md).
+
+1. **Write `packs/<id>/statement.yaml`.** Copy `packs/mpesa/statement.yaml`. Set `institution` to the SMS pack's id, `detect` patterns that match the first page, the `period`, and one entry under `columns` per table column, left to right, each with a `header` pattern. Amounts and balances are `align: right`. Use `money_in` and `money_out`, or one `amount` column with `amount: { negative_is: out }` or a `marker` column with `marker_out` and `marker_in` (`DR` and `CR`). `row_starts_with` names the column that is filled only on a row's first line, usually the date. Add `skip` patterns for page chrome, `fees` if charges are separate rows, and description `rules` to set the transaction type, `counterparty` and `account`.
+2. **Write `statement_fixtures.yaml`.** Typeset synthetic pages: `columns` gives each column's left edge (or `">"` and its right edge for amounts), and each line is free text or a list of cells. Cover every rule, a row wrapping across a page break, and the expected balances.
+3. **Check it** with `dart run tool/check_packs.dart packs/<id>` and `dart run tool/bundle_packs.dart`.
+
+Never build fixtures from a real statement by copying its text. Write the rows by hand in the same shape, as for SMS samples.
 
 ### The synthetic-data rule
 
