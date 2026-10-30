@@ -49,9 +49,8 @@
     },
     "time_format": { "$ref": "#/$defs/timeFormat" },
     "rules": {
-      "description": "Tried in order; the first match wins.",
+      "description": "Tried in order; the first match wins. Empty for a review-only pack, whose messages all go to the review inbox.",
       "type": "array",
-      "minItems": 1,
       "items": { "$ref": "#/$defs/rule" }
     }
   },

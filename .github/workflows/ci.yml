@@ -31,6 +31,8 @@ jobs:
         run: dart run tool/bundle_packs.dart --check
       - name: Check packs
         run: dart run tool/check_packs.dart
+      - name: Check the example messages page is current
+        run: dart run tool/message_examples.dart --check
       - name: Test
         run: dart test
 

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only. The pack has no rules yet, so each one is
+# expected in the review inbox.
+pack: loop
+samples:
+  - name: a payment alert goes to the review inbox
+    sender: NCBALOOP
+    body: 'Example alert: KES 1,000.00 paid to EXAMPLE STORES on 26/10/2026 at 09:15. Ref EX00000001.'
+    expect: unmatched
+
+  - name: the other sender ID is read too
+    sender: NCBA_LOOP
+    body: 'Example alert: KES 2,500.00 received from JANE DOE on 26/10/2026 at 10:02. Ref EX00000002.'
+    expect: unmatched
