@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Review-only: no public sample of Loop's own SMS wording was found, so
+# every message goes to the review inbox, where the reader suggests the
+# fields and the person's answers teach the app the layout. Add rules once
+# real wording is known (as synthetic fixtures). The sender IDs come from a
+# secondary source and need confirming against a real message.
+# Loop credits to M-PESA ("from LOOP B2C") are read by the mpesa pack.
+schema: 1
+id: loop
+name: Loop
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - NCBALOOP
+  - NCBA_LOOP
+rules: []

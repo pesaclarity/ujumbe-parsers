@@ -94,6 +94,25 @@ rules:
     time_format: "dd/MM/yyyy 'at' h:mm a"
     pattern: '^Dear [^,]+, your KCB A/C (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal KES ?(?<balance>[\d,]+\.\d{2})'
 ''',
+  'loop': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Review-only: no public sample of Loop's own SMS wording was found, so
+# every message goes to the review inbox, where the reader suggests the
+# fields and the person's answers teach the app the layout. Add rules once
+# real wording is known (as synthetic fixtures). The sender IDs come from a
+# secondary source and need confirming against a real message.
+# Loop credits to M-PESA ("from LOOP B2C") are read by the mpesa pack.
+schema: 1
+id: loop
+name: Loop
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - NCBALOOP
+  - NCBA_LOOP
+rules: []
+''',
   'mpesa': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 schema: 1
