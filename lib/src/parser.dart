@@ -275,8 +275,11 @@ class SmsParser {
       feeMinor: fee,
       balanceMinor: balance,
       receipt: group('receipt'),
-      counterparty: group('counterparty'),
+      // Names are often printed with two spaces between words.
+      counterparty: group('counterparty')?.replaceAll(_spaces, ' '),
       account: group('account'),
     );
   }
 }
+
+final _spaces = RegExp(r'\s+');

@@ -32,7 +32,7 @@ rules:
 schema: 1
 id: kcb
 name: KCB
-version: 0.1.0
+version: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -46,13 +46,29 @@ rules:
       debited: out
       credited: in
     pattern: '^Dear Customer, KES ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is KES ?(?<balance>[\d,]+\.\d{2})\.'
+
+  # Sent from a KCB account to a mobile wallet; the receipt leads.
+  # "account" is the masked KCB account, "counterparty" the recipient.
+  - id: wallet_transfer
+    type: bank
+    direction: out
+    time_format: "yyyy-MM-dd hh:mm:ss a"
+    pattern: '^(?<receipt>[A-Z0-9]{16})\s+KES ?(?<amount>[\d,]+\.\d{2}) sent from (?<account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
+
+  - id: account_named
+    type: bank
+    direction_values:
+      debited: out
+      credited: in
+    time_format: "dd/MM/yyyy 'at' h:mm a"
+    pattern: '^Dear [^,]+, your KCB A/C (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal KES ?(?<balance>[\d,]+\.\d{2})'
 ''',
   'mpesa': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.1.0
+version: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -70,12 +86,12 @@ rules:
   - id: sent
     type: sent
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?) (?<account>0\d{2,3}[\d*]{5,7}) on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
 
   - id: received
     type: received
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^(?:Congratulations! )?(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}|\d{5,7}))?\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
 
   - id: till
     type: till
@@ -97,18 +113,45 @@ rules:
   - id: fuliza
     type: fuliza
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-Pesa amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.'
 
   - id: fuliza_repayment
     type: fuliza_repayment
     direction: out
     pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
 
-  # "account" holds the receipt of the transaction being reversed.
+  # "account" holds the receipt of the transaction being reversed. Money
+  # comes back to the sender ("credited") or is taken back from the
+  # recipient ("debited").
   - id: reversal
     type: reversal
+    direction_values:
+      credited: in
+      debited: out
+    pattern: '^(?<receipt>[A-Z0-9]{10})\s+[Cc]onfirmed\. Reversal of transaction (?<account>[A-Z0-9]{10}) has been successfully reversed\s+on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s+and Ksh(?<amount>[\d,]+\.\d{2}) is (?<direction>credited|debited) (?:to|from) your M-PESA account\.\s*New M-PESA (?:account )?balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+
+  # M-Shwari savings, typed as the statement pack types them.
+  - id: mshwari_deposit
+    type: paybill
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred to (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*New M-Shwari saving account balance is Ksh[\d,]+\.\d{2}\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
+
+  - id: mshwari_withdraw
+    type: received
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\. Reversal of transaction (?<account>[A-Z0-9]{10}) has been successfully reversed\s+on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\s+and Ksh(?<amount>[\d,]+\.\d{2}) is credited to your M-PESA account\.\s*New M-PESA account balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred from (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-Shwari balance is Ksh[\d,]+\.\d{2}\s*\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
+
+  # Airtime for another number; "account" holds that number.
+  - id: airtime_other
+    type: airtime
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) of airtime for (?<account>\d{9,12}) on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+
+  # Cash deposited at an agent.
+  - id: deposit
+    type: received
+    direction: in
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*On (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s*Give Ksh(?<amount>[\d,]+\.\d{2}) cash to (?<counterparty>.+?)\s+New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
 ''',
 };
 
