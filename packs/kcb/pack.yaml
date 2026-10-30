@@ -4,7 +4,7 @@
 schema: 1
 id: kcb
 name: KCB
-version: 0.1.0
+version: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -18,3 +18,19 @@ rules:
       debited: out
       credited: in
     pattern: '^Dear Customer, KES ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is KES ?(?<balance>[\d,]+\.\d{2})\.'
+
+  # Sent from a KCB account to a mobile wallet; the receipt leads.
+  # "account" is the masked KCB account, "counterparty" the recipient.
+  - id: wallet_transfer
+    type: bank
+    direction: out
+    time_format: "yyyy-MM-dd hh:mm:ss a"
+    pattern: '^(?<receipt>[A-Z0-9]{16})\s+KES ?(?<amount>[\d,]+\.\d{2}) sent from (?<account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
+
+  - id: account_named
+    type: bank
+    direction_values:
+      debited: out
+      credited: in
+    time_format: "dd/MM/yyyy 'at' h:mm a"
+    pattern: '^Dear [^,]+, your KCB A/C (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal KES ?(?<balance>[\d,]+\.\d{2})'
