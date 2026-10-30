@@ -4,11 +4,28 @@ Every sample message the packs are tested with, generated from `packs/*/fixtures
 
 All samples are synthetic: fake names, masked fake numbers and made-up receipts, written in the shape of real alerts. "Review inbox" means no rule reads the message, so the person checks it once.
 
+- [Airtel Money](#airtel-money)
 - [Equity Bank](#equity-bank)
 - [I&M Bank](#im-bank)
 - [KCB](#kcb)
 - [Loop](#loop)
 - [M-Pesa](#m-pesa)
+
+## Airtel Money
+
+Pack `airtel_money` 0.1.0 · senders `AirtelMoney` · rules none yet (review-only)
+
+**a send goes to the review inbox** (`AirtelMoney` → review inbox)
+
+```text
+Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Balance Ksh 1,500.00. TID EX0000000001.
+```
+
+**the sender is matched in any case** (`AIRTELMONEY` → review inbox)
+
+```text
+Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.
+```
 
 ## Equity Bank
 
