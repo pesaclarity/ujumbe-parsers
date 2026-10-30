@@ -29,7 +29,7 @@ void main() {
   });
 
   test('every pack is bundled and loads', () {
-    expect(bundledPackIds, containsAll(['im_bank', 'kcb', 'mpesa']));
+    expect(bundledPackIds, containsAll(['equity', 'im_bank', 'kcb', 'mpesa']));
     final packs = loadBundledPacks();
     expect(packs.map((p) => p.id), bundledPackIds);
     expect(() => SmsParser(packs), returnsNormally);
