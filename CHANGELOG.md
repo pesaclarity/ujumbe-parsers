@@ -2,6 +2,16 @@
 
 All notable changes to this package are listed here. Versions follow [semantic versioning](https://semver.org); until 1.0 a minor version may break the pack format or the API.
 
+## [0.2.0](https://github.com/pesaclarity/ujumbe-parsers/compare/v0.1.0...v0.2.0) (2026-10-30)
+
+
+### Features
+
+* add Airtel Money as a review-only pack ([#23](https://github.com/pesaclarity/ujumbe-parsers/issues/23)) ([cc36266](https://github.com/pesaclarity/ujumbe-parsers/commit/cc36266ee8d3f8129324330a82389ad1b87a8242))
+* add an Equity Bank pack ([#19](https://github.com/pesaclarity/ujumbe-parsers/issues/19)) ([ae48f0e](https://github.com/pesaclarity/ujumbe-parsers/commit/ae48f0e52da655a25c501a1bb431a916a803dd2b))
+* add Loop as a review-only pack and list every sample message ([#21](https://github.com/pesaclarity/ujumbe-parsers/issues/21)) ([15dbbd2](https://github.com/pesaclarity/ujumbe-parsers/commit/15dbbd2088038ba2baab7cd5b3c8002d3d5774a4))
+* read more M-PESA and KCB message shapes ([#17](https://github.com/pesaclarity/ujumbe-parsers/issues/17)) ([b7dacf4](https://github.com/pesaclarity/ujumbe-parsers/commit/b7dacf4ca57b2a41769d1f220239811af731b2de))
+
 ## 0.1.0
 
 First release, for the Pesa Clarity app to depend on by git tag.
