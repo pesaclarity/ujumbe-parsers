@@ -3,6 +3,37 @@
 
 /// The YAML source of every pack in `packs/`, by pack id.
 const bundledPackSources = <String, String>{
+  'equity': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Shapes from public samples, rewritten as synthetic fixtures. Equity
+# charges for alerts and people can opt out, so some will have none.
+schema: 1
+id: equity
+name: Equity Bank
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - Equity Bank
+  - EQUITYBANK
+  - EQUITY_BANK
+time_format: "dd/MM/yyyy 'at' HH:mm:ss"
+
+rules:
+  # Sent from Equity to a mobile wallet. The wording says "credited" but
+  # the money leaves the account. "account" holds the wallet's receipt.
+  - id: wallet_transfer
+    type: bank
+    direction: out
+    pattern: '^Your transaction of Kshs?\.? ?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+has been credited to\s+\d{9,12}\s+(?<counterparty>.+?)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+)\.\s*(?:M-?PESA Ref\.\s*(?<account>[A-Z0-9]+)\s+)?on\s+(?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2}:\d{2})\.'
+
+  # Money into the account; the currency follows the amount.
+  - id: received
+    type: bank
+    direction: in
+    time_format: "d MMM yyyy 'at' HH:mm"
+    pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) KES from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
+''',
   'im_bank': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 # Minimal starter pack. The message shape is illustrative and must be

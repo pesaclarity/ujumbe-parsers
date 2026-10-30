@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only: fake names, masked fake numbers, made-up references.
+pack: equity
+samples:
+  - name: send to a mobile wallet
+    sender: Equity Bank
+    body: 'Your transaction of Kshs. 200.0  has been credited to  254700000001  JANE DOE. Ref.  EQA0000000000001. MPESA Ref.  TJA0000001 on  26/10/2026 at 09:15:30.'
+    expect:
+      rule: wallet_transfer
+      type: bank
+      direction: out
+      amount_minor: 20000
+      receipt: EQA0000000000001
+      counterparty: JANE DOE
+      account: TJA0000001
+      time: '2026-10-26T09:15:30+03:00'
+
+  - name: receive into the account
+    sender: EQUITYBANK
+    body: 'You have received 2000.00 KES from EXAMPLE TRADERS 0********1111 to your Equity account 0********1234. Ref. EQB0000000000002 on 12 Sep 2026 at 14:05 EAT'
+    expect:
+      rule: received
+      type: bank
+      direction: in
+      amount_minor: 200000
+      receipt: EQB0000000000002
+      counterparty: EXAMPLE TRADERS
+      account: 0********1234
+      time: '2026-09-12T14:05:00+03:00'
+
+  - name: service notice goes to the review inbox
+    sender: EQUITY_BANK
+    body: 'Dear Customer, Equity mobile banking will be briefly unavailable tonight from 11:00 PM for planned maintenance.'
+    expect: unmatched
