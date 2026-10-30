@@ -3,6 +3,25 @@
 
 /// The YAML source of every pack in `packs/`, by pack id.
 const bundledPackSources = <String, String>{
+  'airtel_money': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Review-only: no public sample of Airtel Money Kenya's wording was found
+# (Uganda and Tanzania samples differ in currency and language). Every
+# message goes to the review inbox, where the reader suggests the fields
+# and the person's answers teach the app the layout. Add rules once real
+# Kenyan wording is known (as synthetic fixtures). The sender ID matches
+# Airtel Money Uganda's and needs confirming for Kenya; senders compare
+# case-insensitively, so AIRTELMONEY matches too.
+schema: 1
+id: airtel_money
+name: Airtel Money
+version: 0.1.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - AirtelMoney
+rules: []
+''',
   'equity': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 # Shapes from public samples, rewritten as synthetic fixtures. Equity
