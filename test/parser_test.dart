@@ -40,6 +40,12 @@ void main() {
     expect(t.timeFromMessage, isTrue);
   });
 
+  test('collapses runs of spaces in the counterparty', () {
+    final body = testSentBody.replaceFirst('JANE DOE', 'JANE  DOE');
+    final t = parser.parse(sms(body)) as ParsedTransaction;
+    expect(t.counterparty, 'JANE DOE');
+  });
+
   test('keeps a hash of the raw text and a dedupe key, not the text', () {
     final t = parser.parse(sms(testSentBody)) as ParsedTransaction;
     expect(t.rawHash, hashMessageBody(testSentBody));

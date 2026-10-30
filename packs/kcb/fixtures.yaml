@@ -28,6 +28,33 @@ samples:
       account: '****0001'
       time: '2026-10-27T09:00:00+03:00'
 
+  - name: send to a mobile wallet
+    sender: KCB
+    body: 'KCB0000000000003  KES 1,000.00 sent from 123****456 to 254****789 - JANE DOE on 2026-10-26 09:15:00 AM. M-PESA REF: TJA0000001'
+    expect:
+      rule: wallet_transfer
+      type: bank
+      direction: out
+      amount_minor: 100000
+      receipt: KCB0000000000003
+      counterparty: JANE DOE
+      account: 123****456
+      time: '2026-10-26T09:15:00+03:00'
+
+  - name: named account credited
+    sender: KCB
+    body: 'Dear JANE, your KCB A/C ****1234 has been credited with KES 2,000.00 from JOHN KAMAU on 26/10/2026 at 9:15 PM. Ref: KCB0000000004. Avail Bal KES 9,000.00'
+    expect:
+      rule: account_named
+      type: bank
+      direction: in
+      amount_minor: 200000
+      balance_minor: 900000
+      receipt: KCB0000000004
+      counterparty: JOHN KAMAU
+      account: '****1234'
+      time: '2026-10-26T21:15:00+03:00'
+
   - name: balance enquiry goes to the review inbox
     sender: KCB
     body: 'Dear Customer, your account balance is KES 19,500.50 as at 27/10/2026 10:00.'

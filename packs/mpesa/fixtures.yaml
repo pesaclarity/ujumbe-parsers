@@ -140,6 +140,132 @@ samples:
       account: TJA0000001
       time: '2026-10-26T20:00:00+03:00'
 
+  - name: send with two spaces in the name and no phone
+    sender: MPESA
+    body: 'TJA0000010 Confirmed. Ksh300.00 sent to MARY  ATIENO on 26/10/26 at 9:20 AM. New M-PESA balance is Ksh2,950.00. Transaction cost, Ksh0.00. Amount you can transact within the day is 498,200.00.'
+    expect:
+      rule: sent
+      type: sent
+      direction: out
+      amount_minor: 30000
+      fee_minor: 0
+      balance_minor: 295000
+      receipt: TJA0000010
+      counterparty: MARY ATIENO
+      time: '2026-10-26T09:20:00+03:00'
+
+  - name: receive from a bank with its short code
+    sender: MPESA
+    body: 'TJA0000011 Confirmed.You have received Ksh5,000.00 from EXAMPLE BANK 1 522522 on 26/10/26 at 10:10 AM New M-PESA balance is Ksh9,035.00.  Separate personal and business funds through Pochi la Biashara on *334#.'
+    expect:
+      rule: received
+      type: received
+      direction: in
+      amount_minor: 500000
+      balance_minor: 903500
+      receipt: TJA0000011
+      counterparty: EXAMPLE BANK 1
+      account: '522522'
+      time: '2026-10-26T10:10:00+03:00'
+
+  - name: receive with a greeting before the receipt
+    sender: MPESA
+    body: 'Congratulations! TJA0000012 confirmed.You have received Ksh800.00 from EXAMPLE WALLET B2C. on 26/10/26 at 10:15 AM.New M-PESA balance is Ksh9,835.00.'
+    expect:
+      rule: received
+      type: received
+      direction: in
+      amount_minor: 80000
+      balance_minor: 983500
+      receipt: TJA0000012
+      counterparty: EXAMPLE WALLET B2C
+      time: '2026-10-26T10:15:00+03:00'
+
+  - name: deposit cash at an agent
+    sender: MPESA
+    body: 'TJA0000013 Confirmed. On 26/10/26 at 2:30 PM Give Ksh2,000.00 cash to EXAMPLE AGENT SHOP New M-PESA balance is Ksh10,806.00.'
+    expect:
+      rule: deposit
+      type: received
+      direction: in
+      amount_minor: 200000
+      balance_minor: 1080600
+      receipt: TJA0000013
+      counterparty: EXAMPLE AGENT SHOP
+      time: '2026-10-26T14:30:00+03:00'
+
+  - name: buy airtime for another number
+    sender: MPESA
+    body: 'TJA0000014 Confirmed.Ksh50.00 of airtime for 0700000003 on 26/10/26 at 3:05 PM  New M-PESA balance is Ksh10,656.00.'
+    expect:
+      rule: airtime_other
+      type: airtime
+      direction: out
+      amount_minor: 5000
+      balance_minor: 1065600
+      receipt: TJA0000014
+      account: '0700000003'
+      time: '2026-10-26T15:05:00+03:00'
+
+  - name: Fuliza draw in capitals
+    sender: MPESA
+    received_at: '2026-10-26T15:10:00+03:00'
+    body: 'TJA0000015 Confirmed. Fuliza M-PESA amount is Ksh 250.00. Access Fee charged Ksh 2.50. Total Fuliza M-PESA outstanding amount is Ksh 1794.51 due on 25/11/26. To check daily charges, Dial *334#OK Select Fuliza M-PESA to Query Charges.'
+    expect:
+      rule: fuliza
+      type: fuliza
+      direction: in
+      amount_minor: 25000
+      fee_minor: 250
+      receipt: TJA0000015
+      time: '2026-10-26T15:10:00+03:00'
+
+  - name: move to M-Shwari
+    sender: MPESA
+    body: 'TJA0000016 Confirmed.Ksh500.00 transferred to M-Shwari account on 26/10/26 at 4:00 PM. M-PESA balance is Ksh247.50 .New M-Shwari saving account balance is Ksh1,500.00. Transaction cost Ksh.0.00'
+    expect:
+      rule: mshwari_deposit
+      type: paybill
+      direction: out
+      amount_minor: 50000
+      fee_minor: 0
+      balance_minor: 24750
+      receipt: TJA0000016
+      counterparty: M-Shwari
+      time: '2026-10-26T16:00:00+03:00'
+
+  - name: move from M-Shwari
+    sender: MPESA
+    body: 'TJA0000017 Confirmed.Ksh200.00 transferred from M-Shwari account on 26/10/26 at 4:10 PM. M-Shwari balance is Ksh1,300.00 .M-PESA balance is Ksh447.50 .Transaction cost Ksh.0.00'
+    expect:
+      rule: mshwari_withdraw
+      type: received
+      direction: in
+      amount_minor: 20000
+      fee_minor: 0
+      balance_minor: 44750
+      receipt: TJA0000017
+      counterparty: M-Shwari
+      time: '2026-10-26T16:10:00+03:00'
+
+  - name: reversal taken back from the recipient
+    sender: MPESA
+    body: 'TJA0000018  confirmed. Reversal of transaction TJA0000011 has been successfully reversed  on 26/10/26  at 5:00 PM and Ksh300.00 is debited from your M-PESA account. New M-PESA account balance is Ksh147.50.'
+    expect:
+      rule: reversal
+      type: reversal
+      direction: out
+      amount_minor: 30000
+      balance_minor: 14750
+      receipt: TJA0000018
+      account: TJA0000011
+      time: '2026-10-26T17:00:00+03:00'
+
+  - name: M-Shwari balance goes to the review inbox
+    sender: MPESA
+    body: 'TJA0000019 Confirmed . Your M-Shwari Deposit Account balance is Ksh1,300.00 .Transaction cost Ksh 0.00.'
+    expect: unmatched
+
   - name: service notice goes to the review inbox
     sender: MPESA
     body: 'Dear Customer, M-PESA services will be briefly unavailable tonight from 11:00 PM for planned maintenance.'
