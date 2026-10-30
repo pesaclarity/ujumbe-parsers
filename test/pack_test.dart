@@ -82,4 +82,19 @@ void main() {
     );
     expect(pack.minEngineVersion, engineVersion);
   });
+
+  test('a pack with no rules is review-only', () {
+    final pack = ParserPack.fromYaml(
+      '${testPackYaml.substring(0, testPackYaml.indexOf('rules:'))}rules: []\n',
+    );
+    expect(pack.rules, isEmpty);
+    final result = SmsParser([pack]).parse(
+      SmsMessage(
+        sender: 'EXWALLET',
+        body: testSentBody,
+        receivedAt: DateTime.utc(2026, 10, 26),
+      ),
+    );
+    expect(result, isA<Unmatched>());
+  });
 }

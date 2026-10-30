@@ -11,7 +11,7 @@ void main() {
 
   test('the starter packs are present', () {
     final names = dirs.map((d) => d.uri.pathSegments.reversed.skip(1).first);
-    expect(names, containsAll(['mpesa', 'im_bank', 'kcb', 'equity']));
+    expect(names, containsAll(['mpesa', 'im_bank', 'kcb', 'equity', 'loop']));
   });
 
   for (final dir in dirs) {

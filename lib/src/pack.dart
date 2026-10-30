@@ -212,8 +212,10 @@ class ParserPack {
 
     final rules = <PackRule>[];
     final ruleNodes = doc['rules'];
-    if (ruleNodes is! YamlList || ruleNodes.isEmpty) {
-      problems.add('rules: a non-empty list is required');
+    // An empty list is a review-only pack: its senders are read, and every
+    // message goes to the review inbox until rules are written.
+    if (ruleNodes is! YamlList) {
+      problems.add('rules: a list is required');
     } else {
       final seen = <String>{};
       for (var i = 0; i < ruleNodes.length; i++) {
