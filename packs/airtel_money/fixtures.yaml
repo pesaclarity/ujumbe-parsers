@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only. The pack has no rules yet, so each one is
+# expected in the review inbox.
+pack: airtel_money
+samples:
+  - name: a send goes to the review inbox
+    sender: AirtelMoney
+    body: 'Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Balance Ksh 1,500.00. TID EX0000000001.'
+    expect: unmatched
+
+  - name: the sender is matched in any case
+    sender: AIRTELMONEY
+    body: 'Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.'
+    expect: unmatched

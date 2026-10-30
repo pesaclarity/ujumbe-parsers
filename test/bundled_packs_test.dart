@@ -31,7 +31,14 @@ void main() {
   test('every pack is bundled and loads', () {
     expect(
       bundledPackIds,
-      containsAll(['equity', 'im_bank', 'kcb', 'loop', 'mpesa']),
+      containsAll([
+        'airtel_money',
+        'equity',
+        'im_bank',
+        'kcb',
+        'loop',
+        'mpesa',
+      ]),
     );
     final packs = loadBundledPacks();
     expect(packs.map((p) => p.id), bundledPackIds);
