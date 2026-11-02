@@ -44,7 +44,7 @@ jobs:
         run: |
           echo "::error::Start this workflow from a v* tag, not a branch."
           exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.TAG }}
           persist-credentials: false
