@@ -5,6 +5,7 @@ Every sample message the packs are tested with, generated from `packs/*/fixtures
 All samples are synthetic: fake names, masked fake numbers and made-up receipts, written in the shape of real alerts. "Review inbox" means no rule reads the message, so the person checks it once.
 
 - [Airtel Money](#airtel-money)
+- [Co-operative Bank](#co-operative-bank)
 - [Equity Bank](#equity-bank)
 - [I&M Bank](#im-bank)
 - [KCB](#kcb)
@@ -25,6 +26,46 @@ Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Ba
 
 ```text
 Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.
+```
+
+## Co-operative Bank
+
+Pack `co_op_bank` 0.2.0 · senders `CoopBank` · rules `mobile_money_received`, `card_withdrawal`, `card_payment`, `paybill_sent`
+
+**receive money from M-Pesa** (`CoopBank` → `mobile_money_received` · money in)
+
+```text
+Dear JANE, You have received Kes 45000 on your M-pesa from SAMPLE COMMUNITY CHURCH.Bank Ref:CBK000000000001.Mpesa Ref:MPX00000001.
+```
+
+**withdraw cash from a branch ATM** (`CoopBank` → `card_withdrawal` · money out)
+
+```text
+Dear ALEX, Card CASH transaction dated 31-OCT-2026 17:47:25 of KES 40000  EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**pay a merchant by card** (`CoopBank` → `card_payment` · money out)
+
+```text
+Dear ALEX, Card PAYMENT transaction dated 27-OCT-2026 19:17:46 of KES 1790  SAMPLE MEDICAL>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**send money to a paybill** (`CoopBank` → `paybill_sent` · money out)
+
+```text
+Dear JANE DOE, you have sent Ksh. 60.0 to SAMPLE COMMUNITY CHURCH for 12345 on 10/25/2026 at 11:03:49. MPESA Ref. MPX00000002.
+```
+
+**balance enquiry is not a transaction** (`CoopBank` → review inbox)
+
+```text
+Dear ALEX, Card BAL ENQ transaction dated 28-OCT-2026 11:49:57 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**statement request is not a transaction** (`CoopBank` → review inbox)
+
+```text
+Dear ALEX, Card STM REQ transaction dated 05-OCT-2026 18:30:26 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
 ```
 
 ## Equity Bank
