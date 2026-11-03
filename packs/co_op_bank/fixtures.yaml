@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic fixtures only: invented names, references, merchants and numbers.
+pack: co_op_bank
+samples:
+  - name: receive money from M-Pesa
+    sender: CoopBank
+    received_at: '2026-10-31T18:00:00+03:00'
+    body: 'Dear JANE, You have received Kes 45000 on your M-pesa from SAMPLE COMMUNITY CHURCH.Bank Ref:CBK000000000001.Mpesa Ref:MPX00000001.'
+    expect:
+      rule: mobile_money_received
+      type: received
+      direction: in
+      amount_minor: 4500000
+      receipt: MPX00000001
+      counterparty: SAMPLE COMMUNITY CHURCH
+      time: '2026-10-31T18:00:00+03:00'
+
+  - name: withdraw cash from a branch ATM
+    sender: CoopBank
+    body: 'Dear ALEX, Card CASH transaction dated 31-OCT-2026 17:47:25 of KES 40000  EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.'
+    expect:
+      rule: card_withdrawal
+      type: withdrawal
+      direction: out
+      amount_minor: 4000000
+      counterparty: EXAMPLEBRANCH001
+      time: '2026-10-31T17:47:25+03:00'
+
+  - name: pay a merchant by card
+    sender: CoopBank
+    body: 'Dear ALEX, Card PAYMENT transaction dated 27-OCT-2026 19:17:46 of KES 1790  SAMPLE MEDICAL>NAIROBI KE Was Successful.Enquiries 0000000000.'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 179000
+      counterparty: SAMPLE MEDICAL
+      time: '2026-10-27T19:17:46+03:00'
+
+  - name: send money to a paybill
+    sender: CoopBank
+    body: 'Dear JANE DOE, you have sent Ksh. 60.0 to SAMPLE COMMUNITY CHURCH for 12345 on 10/25/2026 at 11:03:49. MPESA Ref. MPX00000002.'
+    expect:
+      rule: paybill_sent
+      type: paybill
+      direction: out
+      amount_minor: 6000
+      receipt: MPX00000002
+      counterparty: SAMPLE COMMUNITY CHURCH
+      account: '12345'
+      time: '2026-10-25T11:03:49+03:00'
+
+  - name: balance enquiry is not a transaction
+    sender: CoopBank
+    body: 'Dear ALEX, Card BAL ENQ transaction dated 28-OCT-2026 11:49:57 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.'
+    expect: unmatched
+
+  - name: statement request is not a transaction
+    sender: CoopBank
+    body: 'Dear ALEX, Card STM REQ transaction dated 05-OCT-2026 18:30:26 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.'
+    expect: unmatched
