@@ -176,6 +176,13 @@ dart test
 
 CI runs the same steps on every pull request, and also validates the packs against the JSON Schema.
 
+## Get involved
+
+- **Star [the app](https://github.com/pesaclarity/pesaclarity-app)** so more people find a private money app that runs on their phone.
+- The easiest way in: add a pack for a bank, Sacco or wallet you use. See [Adding an institution](#adding-an-institution); no Flutter needed.
+- **Pick a first issue:** [good first issues](https://github.com/pesaclarity/ujumbe-parsers/issues?q=is%3Aopen+label%3A%22good+first+issue%22) or [help wanted](https://github.com/pesaclarity/ujumbe-parsers/issues?q=is%3Aopen+label%3A%22help+wanted%22).
+- **Read [CONTRIBUTING.md](CONTRIBUTING.md)** before your first pull request. Never include real messages, statements or phone numbers.
+
 ## Licence
 
 Apache-2.0, see [LICENSE](LICENSE). Packs and fixtures are under the same licence so banks, fintechs and other projects can use them freely. The Pesa Clarity name and logo are trademarks and are not covered by this licence.
