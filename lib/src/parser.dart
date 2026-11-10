@@ -80,6 +80,7 @@ final class ParsedTransaction extends ParseResult {
     this.receipt,
     this.counterparty,
     this.account,
+    this.ownAccount,
   });
 
   /// The pack and version that produced this result.
@@ -100,7 +101,8 @@ final class ParsedTransaction extends ParseResult {
   /// Amount in minor units (cents). Never a floating-point value.
   final int amountMinor;
 
-  /// ISO 4217 currency code.
+  /// ISO 4217 currency code: the one printed with the amount, else the
+  /// pack's.
   final String currency;
 
   /// Transaction time in UTC.
@@ -128,6 +130,11 @@ final class ParsedTransaction extends ParseResult {
   /// A phone number, account number or paybill account reference, as
   /// printed (often masked by the institution).
   final String? account;
+
+  /// The account holder's own account number, as printed: usually masked,
+  /// with a few digits at the start and the end (`0170*****4321`). Tells
+  /// two accounts at the same institution apart.
+  final String? ownAccount;
 
   /// Key for matching this SMS against later statement imports: receipt,
   /// amount and time to the minute (statements rarely carry seconds).
@@ -245,6 +252,12 @@ class SmsParser {
       return fail('unreadable balance');
     }
 
+    final currencyText = group('currency');
+    final currency = currencyText == null
+        ? pack.currency
+        : currencyCode(currencyText);
+    if (currency == null) return fail('unknown currency "$currencyText"');
+
     var direction = rule.direction;
     if (direction == null) {
       final text = group('direction')?.toLowerCase();
@@ -268,7 +281,7 @@ class SmsParser {
       type: rule.type,
       direction: direction,
       amountMinor: amount,
-      currency: pack.currency,
+      currency: currency,
       time: time,
       timeFromMessage: timeText != null,
       rawHash: rawHash,
@@ -278,8 +291,18 @@ class SmsParser {
       // Names are often printed with two spaces between words.
       counterparty: group('counterparty')?.replaceAll(_spaces, ' '),
       account: group('account'),
+      ownAccount: group('own_account'),
     );
   }
 }
 
 final _spaces = RegExp(r'\s+');
+
+/// The ISO 4217 code for a currency as printed in a message: `KES`, `Ksh`,
+/// `Kshs` and `KSh.` are all KES; any other three letters are taken as a
+/// code. Null when [printed] is none of these.
+String? currencyCode(String printed) {
+  final letters = printed.replaceAll('.', '').trim().toUpperCase();
+  if (letters == 'KSH' || letters == 'KSHS') return 'KES';
+  return RegExp(r'^[A-Z]{3}$').hasMatch(letters) ? letters : null;
+}

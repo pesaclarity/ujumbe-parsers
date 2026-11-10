@@ -25,8 +25,24 @@ samples:
       amount_minor: 200000
       receipt: EQB0000000000002
       counterparty: EXAMPLE TRADERS
-      account: 0********1234
+      own_account: 0********1234
       time: '2026-09-12T14:05:00+03:00'
+
+  # A USD account at the same bank: the currency and account come from the
+  # message, so it stays apart from the KES account above.
+  - name: receive into a USD account
+    sender: EQUITYBANK
+    body: 'You have received 1,500.00 USD from EXAMPLE EMPLOYER LTD to your Equity account 0********8765. Ref. EQB0000000000003 on 3 Nov 2026 at 09:00 EAT'
+    expect:
+      rule: received
+      type: bank
+      direction: in
+      amount_minor: 150000
+      currency: USD
+      receipt: EQB0000000000003
+      counterparty: EXAMPLE EMPLOYER LTD
+      own_account: 0********8765
+      time: '2026-11-03T09:00:00+03:00'
 
   - name: service notice goes to the review inbox
     sender: EQUITY_BANK

@@ -56,7 +56,7 @@ class PackFixtures {
     for (final sample in samples) {
       final result = parser.parse(sample.message);
       if (result is ParsedTransaction) covered.add(result.ruleId);
-      for (final problem in sample.check(result)) {
+      for (final problem in sample.check(result, packCurrency: pack.currency)) {
         failures.add('${sample.name}: $problem');
       }
     }
@@ -93,7 +93,8 @@ class FixtureSample {
   final Map<String, Object?>? expected;
 
   /// Every field a parsed sample is compared on. Fields left out of a
-  /// fixture must parse as absent, so a rule cannot silently capture extra.
+  /// fixture must parse as absent, so a rule cannot silently capture extra;
+  /// `currency` left out must be the pack's.
   static const fields = [
     'rule',
     'type',
@@ -104,11 +105,14 @@ class FixtureSample {
     'receipt',
     'counterparty',
     'account',
+    'own_account',
+    'currency',
     'time',
   ];
 
-  /// Lists how [result] differs from what this sample expects.
-  List<String> check(ParseResult result) {
+  /// Lists how [result] differs from what this sample expects, for a pack
+  /// whose messages are in [packCurrency] unless they say otherwise.
+  List<String> check(ParseResult result, {required String packCurrency}) {
     final expected = this.expected;
     if (expected == null) {
       return result is Unmatched
@@ -129,12 +133,15 @@ class FixtureSample {
       'receipt': result.receipt,
       'counterparty': result.counterparty,
       'account': result.account,
+      'own_account': result.ownAccount,
+      'currency': result.currency,
       'time': result.time,
     };
     final problems = <String>[];
     for (final field in fields) {
       var want = expected[field];
       if (field == 'time' && want is String) want = DateTime.parse(want);
+      if (field == 'currency') want ??= packCurrency;
       if (want != actual[field]) {
         problems.add('$field: expected $want, got ${actual[field]}');
       }

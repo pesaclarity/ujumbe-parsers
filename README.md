@@ -117,7 +117,7 @@ test/                    engine unit tests and a test over every pack
 New banks, SACCOs and wallets are the main way to contribute. Every pack is gated by its own samples.
 
 1. **Create the directory.** `packs/<id>/` where `<id>` is lower case with underscores, e.g. `co_op_bank` or `airtel_money`. The pack's `id` must match.
-2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency`, `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
+2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency` (for messages that print none), `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
 
    | Group | Meaning |
    | --- | --- |
@@ -125,11 +125,13 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `receipt` | The institution's reference |
    | `direction` | Captured word such as "debited", mapped by `direction_values` (otherwise set a fixed `direction: in` or `out`) |
    | `counterparty` | The other party as printed |
-   | `account` | Phone, account or paybill reference, as printed (usually masked) |
+   | `account` | The other side's phone, account or paybill reference, as printed (usually masked) |
+   | `own_account` | The account holder's own account number, as printed (`0170*****4321`); tells two accounts at the same bank apart |
+   | `currency` | The currency printed with the amount (`USD`, `EUR`; `Ksh` and `Kshs` read as KES). Without it, amounts are in the pack's `currency` |
    | `balance`, `fee` | Money after the transaction, and its cost |
    | `time` | Date and time as printed, read with `time_format` |
 
-   Rules are tried in order and the first match wins, so put specific shapes before general ones. If a message prints no time, the engine uses the time the phone received it.
+   Rules are tried in order and the first match wins, so put specific shapes before general ones. A pack that uses `own_account` or `currency` needs `min_engine: 0.2.0`. If a message prints no time, the engine uses the time the phone received it.
 3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
 4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, `dart run tool/message_examples.dart` to list its samples in [docs/MESSAGES.md](docs/MESSAGES.md), then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.

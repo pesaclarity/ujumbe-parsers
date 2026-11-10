@@ -29,7 +29,7 @@ Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at
 
 ## Equity Bank
 
-Pack `equity` 0.1.0 · senders `Equity Bank`, `EQUITYBANK`, `EQUITY_BANK` · rules `wallet_transfer`, `received`
+Pack `equity` 0.2.0 · senders `Equity Bank`, `EQUITYBANK`, `EQUITY_BANK` · rules `wallet_transfer`, `received`
 
 **send to a mobile wallet** (`Equity Bank` → `wallet_transfer` · money out)
 
@@ -43,6 +43,12 @@ Your transaction of Kshs. 200.0  has been credited to  254700000001  JANE DOE. R
 You have received 2000.00 KES from EXAMPLE TRADERS 0********1111 to your Equity account 0********1234. Ref. EQB0000000000002 on 12 Sep 2026 at 14:05 EAT
 ```
 
+**receive into a USD account** (`EQUITYBANK` → `received` · money in)
+
+```text
+You have received 1,500.00 USD from EXAMPLE EMPLOYER LTD to your Equity account 0********8765. Ref. EQB0000000000003 on 3 Nov 2026 at 09:00 EAT
+```
+
 **service notice goes to the review inbox** (`EQUITY_BANK` → review inbox)
 
 ```text
@@ -51,7 +57,7 @@ Dear Customer, Equity mobile banking will be briefly unavailable tonight from 11
 
 ## I&M Bank
 
-Pack `im_bank` 0.1.0 · senders `I&M` · rules `account_alert`
+Pack `im_bank` 0.2.0 · senders `I&M` · rules `account_alert`
 
 **account debited** (`I&M` → `account_alert` · money out)
 
@@ -65,9 +71,15 @@ Dear Customer, your account 0000****001 has been debited with KES 2,500.00 on 26
 Dear Customer, your account 0000****001 has been credited with KES 45,000.00 on 28-Oct-2026 08:30. Ref: IMB000000002. Avail. bal KES 55,000.00.
 ```
 
+**EUR account credited** (`I&M` → `account_alert` · money in)
+
+```text
+Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 03-Nov-2026 09:00. Ref: IMB000000003. Avail. bal EUR 2,450.00.
+```
+
 ## KCB
 
-Pack `kcb` 0.2.0 · senders `KCB` · rules `account_alert`, `wallet_transfer`, `account_named`
+Pack `kcb` 0.3.0 · senders `KCB` · rules `account_alert`, `wallet_transfer`, `account_named`
 
 **account debited** (`KCB` → `account_alert` · money out)
 
@@ -79,6 +91,12 @@ Dear Customer, KES 3,000.00 has been debited from your account ****0001 on 26/10
 
 ```text
 Dear Customer, KES 12,500.50 has been credited to your account ****0001 on 27/10/2026 at 09:00. Transaction Ref: KCB0000000002. Your available balance is KES 19,500.50.
+```
+
+**USD account debited** (`KCB` → `account_alert` · money out)
+
+```text
+Dear Customer, USD 250.00 has been debited from your account ****0002 on 03/11/2026 at 10:15. Transaction Ref: KCB0000000009. Your available balance is USD 1,250.00.
 ```
 
 **send to a mobile wallet** (`KCB` → `wallet_transfer` · money out)

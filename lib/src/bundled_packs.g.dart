@@ -29,7 +29,8 @@ rules: []
 schema: 1
 id: equity
 name: Equity Bank
-version: 0.1.0
+version: 0.2.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -44,14 +45,15 @@ rules:
   - id: wallet_transfer
     type: bank
     direction: out
-    pattern: '^Your transaction of Kshs?\.? ?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+has been credited to\s+\d{9,12}\s+(?<counterparty>.+?)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+)\.\s*(?:M-?PESA Ref\.\s*(?<account>[A-Z0-9]+)\s+)?on\s+(?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2}:\d{2})\.'
+    pattern: '^Your transaction of (?<currency>Kshs?)\.? ?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+has been credited to\s+\d{9,12}\s+(?<counterparty>.+?)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+)\.\s*(?:M-?PESA Ref\.\s*(?<account>[A-Z0-9]+)\s+)?on\s+(?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2}:\d{2})\.'
 
-  # Money into the account; the currency follows the amount.
+  # Money into the account; the currency follows the amount, so a USD
+  # account's messages read as USD. "own_account" is the masked account.
   - id: received
     type: bank
     direction: in
     time_format: "d MMM yyyy 'at' HH:mm"
-    pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) KES from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
+    pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) (?<currency>[A-Z]{3}) from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<own_account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
 ''',
   'im_bank': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -60,7 +62,8 @@ rules:
 schema: 1
 id: im_bank
 name: I&M Bank
-version: 0.1.0
+version: 0.2.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -73,7 +76,7 @@ rules:
     direction_values:
       debited: out
       credited: in
-    pattern: '^Dear Customer, your account (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) on (?<time>\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\. Ref: (?<receipt>[A-Z0-9]+)\. Avail\. bal KES ?(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^Dear Customer, your account (?<own_account>[\d*]+) has been (?<direction>debited|credited) with (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) on (?<time>\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\. Ref: (?<receipt>[A-Z0-9]+)\. Avail\. bal [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})\.'
 ''',
   'kcb': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -82,7 +85,8 @@ rules:
 schema: 1
 id: kcb
 name: KCB
-version: 0.2.0
+version: 0.3.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -95,7 +99,7 @@ rules:
     direction_values:
       debited: out
       credited: in
-    pattern: '^Dear Customer, KES ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is KES ?(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^Dear Customer, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<own_account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})\.'
 
   # Sent from a KCB account to a mobile wallet; the receipt leads.
   # "account" is the masked KCB account, "counterparty" the recipient.
@@ -103,7 +107,7 @@ rules:
     type: bank
     direction: out
     time_format: "yyyy-MM-dd hh:mm:ss a"
-    pattern: '^(?<receipt>[A-Z0-9]{16})\s+KES ?(?<amount>[\d,]+\.\d{2}) sent from (?<account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
+    pattern: '^(?<receipt>[A-Z0-9]{16})\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) sent from (?<own_account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
 
   - id: account_named
     type: bank
@@ -111,7 +115,7 @@ rules:
       debited: out
       credited: in
     time_format: "dd/MM/yyyy 'at' h:mm a"
-    pattern: '^Dear [^,]+, your KCB A/C (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal KES ?(?<balance>[\d,]+\.\d{2})'
+    pattern: '^Dear [^,]+, your KCB A/C (?<own_account>[\d*]+) has been (?<direction>debited|credited) with (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})'
 ''',
   'loop': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
