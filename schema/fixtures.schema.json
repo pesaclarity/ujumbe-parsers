@@ -44,6 +44,8 @@
                   "receipt": { "type": "string" },
                   "counterparty": { "type": "string" },
                   "account": { "type": "string" },
+                  "own_account": { "description": "The account holder's own account number, as printed.", "type": "string" },
+                  "currency": { "description": "ISO 4217 code; defaults to the pack's.", "type": "string", "pattern": "^[A-Z]{3}$" },
                   "time": { "description": "ISO 8601 with offset.", "type": "string" }
                 }
               }

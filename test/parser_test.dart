@@ -91,6 +91,60 @@ void main() {
     expect(parser.parse(sms(body)), isA<Unmatched>());
   });
 
+  group('the currency printed with the amount', () {
+    final multi = ParserPack.fromYaml(r'''
+schema: 1
+id: example_bank
+name: Example Bank
+version: 1.0.0
+currency: KES
+utc_offset: "+03:00"
+senders: [EXBANK]
+rules:
+  - id: alert
+    type: bank
+    direction: in
+    pattern: '^(?<currency>[A-Za-z.]{3,5}) ?(?<amount>[\d,]+\.\d{2}) into (?<own_account>[\d*]+)\.$'
+''');
+    final bank = SmsParser([multi]);
+    ParseResult read(String body) => bank.parse(sms(body, sender: 'EXBANK'));
+
+    test('wins over the pack currency, with the own account', () {
+      final t = read('USD 250.00 into 0170****8765.') as ParsedTransaction;
+      expect(t.currency, 'USD');
+      expect(t.amountMinor, 25000);
+      expect(t.ownAccount, '0170****8765');
+      expect(t.account, isNull);
+    });
+
+    test('reads Ksh and Kshs as KES', () {
+      expect(
+        (read('Kshs 10.00 into 01**1.') as ParsedTransaction).currency,
+        'KES',
+      );
+      expect(
+        (read('KSh. 10.00 into 01**1.') as ParsedTransaction).currency,
+        'KES',
+      );
+    });
+
+    test('an unreadable currency is unmatched, not guessed', () {
+      expect(read('U.S. 10.00 into 01**1.'), isA<Unmatched>());
+    });
+
+    test('a pack without the group keeps its own currency', () {
+      final t = parser.parse(sms(testSentBody)) as ParsedTransaction;
+      expect(t.currency, 'KES');
+      expect(t.ownAccount, isNull);
+    });
+  });
+
+  test('currencyCode', () {
+    expect(currencyCode('eur'), 'EUR');
+    expect(currencyCode('Ksh'), 'KES');
+    expect(currencyCode('US\$'), isNull);
+  });
+
   test('two packs may not claim the same sender', () {
     final clash = ParserPack.fromYaml(
       testPackYaml.replaceFirst('id: example_wallet', 'id: other'),

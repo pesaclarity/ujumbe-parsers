@@ -14,6 +14,8 @@ const allowedGroups = {
   'direction',
   'counterparty',
   'account',
+  'own_account',
+  'currency',
   'balance',
   'fee',
   'time',
