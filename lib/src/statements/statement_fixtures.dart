@@ -130,7 +130,7 @@ class StatementFixtures {
       for (final t in read.transactions) {
         covered.add(t.ruleId.replaceFirst('statement_', ''));
       }
-      for (final problem in fixture.check(read)) {
+      for (final problem in fixture.check(read, packCurrency: pack.currency)) {
         failures.add('${fixture.name}: $problem');
       }
     }
@@ -174,8 +174,12 @@ class StatementFixture {
     'transactions',
   };
 
-  /// Every way [statement] differs from [expected].
-  List<String> check(ParsedStatement statement) {
+  /// Every way [statement] differs from [expected], for a pack whose
+  /// amounts are in [packCurrency].
+  List<String> check(
+    ParsedStatement statement, {
+    required String packCurrency,
+  }) {
     final problems = <String>[];
     void same(String field, Object? actual) {
       if (!expected.containsKey(field)) return;
@@ -214,7 +218,7 @@ class StatementFixture {
             for (final e in (want[i] as Map).entries) '${e.key}': e.value,
           },
         );
-        for (final p in sample.check(got[i])) {
+        for (final p in sample.check(got[i], packCurrency: packCurrency)) {
           problems.add('transactions[$i] ${p.replaceFirst(': ', ' ')}');
         }
       }
