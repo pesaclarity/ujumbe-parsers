@@ -20,6 +20,7 @@ void main() {
         'equity',
         'loop',
         'airtel_money',
+        'co_op_bank'
       ]),
     );
   });

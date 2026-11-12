@@ -22,6 +22,45 @@ senders:
   - AirtelMoney
 rules: []
 ''',
+  'co_op_bank': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Transaction shapes based on Coop alerts, expressed as synthetic patterns.
+schema: 1
+id: co_op_bank
+name: Co-operative Bank
+version: 0.2.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - CoopBank
+time_format: "dd-MMM-yyyy HH:mm:ss"
+
+rules:
+  - id: mobile_money_received
+    type: received
+    direction: in
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*You have received Kes\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+on your M-pesa from\s+(?<counterparty>.+?)\s*\.\s*Bank Ref:\s*[A-Z0-9]+\.\s*Mpesa Ref:\s*(?<receipt>[A-Z0-9]+)\.'
+
+  - id: card_withdrawal
+    type: withdrawal
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card CASH transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: card_payment
+    type: bank
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card PAYMENT transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: paybill_sent
+    type: paybill
+    direction: out
+    ignore_case: true
+    time_format: "M/d/yyyy 'at' HH:mm:ss"
+    pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
+''',
   'equity': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 # Shapes from public samples, rewritten as synthetic fixtures. Equity
