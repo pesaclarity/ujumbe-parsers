@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# Runs every check locally, the same way the old CI workflow did.
+#
+#   tool/check          everything (run by the pre-push hook)
+#   tool/check --fast   format, analyse, generated files, pack fixtures
+#                       (a quicker run by hand)
+#
+# Needs the Dart SDK on PATH. The JSON Schema checks use check-jsonschema,
+# through uv (uvx) if it is installed, otherwise from PATH.
+set -uo pipefail
+
+cd "$(dirname "$0")/.." || exit 1
+
+# Same pinned version the release workflow uses.
+CHECK_JSONSCHEMA_VERSION=0.38.2
+
+mode=full
+case "${1:-}" in
+  "") ;;
+  --fast) mode=fast ;;
+  -h|--help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  *) echo "Unknown option: $1 (use --fast or nothing)" >&2; exit 64 ;;
+esac
+
+failed=()
+
+# step "<name>" "<how to fix>" command...
+step() {
+  local name=$1 fix=$2
+  shift 2
+  echo "==> $name"
+  if ! "$@"; then
+    echo "FAILED: $name" >&2
+    echo "  Fix: $fix" >&2
+    failed+=("$name")
+  fi
+}
+
+skip() {
+  echo "SKIPPED: $1" >&2
+  echo "  Install: $2" >&2
+}
+
+if ! command -v dart >/dev/null 2>&1; then
+  echo "FAILED: the Dart SDK is not on PATH." >&2
+  echo "  Install Dart 3.8 or newer: https://dart.dev/get-dart" >&2
+  exit 1
+fi
+
+step "Get dependencies" "check your network, then run: dart pub get" \
+  dart pub get
+step "Formatting" "run: dart format ." \
+  dart format --output=none --set-exit-if-changed .
+step "Analyse" "fix the issues above (infos count as errors)" \
+  dart analyze --fatal-infos
+step "Bundled pack index is current" "run: dart run tool/bundle_packs.dart" \
+  dart run tool/bundle_packs.dart --check
+step "Check packs" "fix the pack or fixture named above" \
+  dart run tool/check_packs.dart
+step "Example messages page is current" "run: dart run tool/message_examples.dart" \
+  dart run tool/message_examples.dart --check
+
+if [ "$mode" = full ]; then
+  step "Test" "fix the failing tests above" \
+    dart test
+
+  # check-jsonschema: prefer the pinned version through uv.
+  if command -v uvx >/dev/null 2>&1; then
+    jsonschema=(uvx --quiet "check-jsonschema@$CHECK_JSONSCHEMA_VERSION")
+  elif command -v check-jsonschema >/dev/null 2>&1; then
+    jsonschema=(check-jsonschema)
+  else
+    jsonschema=()
+  fi
+
+  # schema_step <schema> <glob>: validate every file the glob matches.
+  schema_step() {
+    local files
+    files=$(compgen -G "$2") || return 0  # no such files in any pack
+    # shellcheck disable=SC2086 # word-splitting the file list is intended
+    step "Schema: $2" "make the file match $1" \
+      "${jsonschema[@]}" --schemafile "$1" $files
+  }
+
+  # Builds a release signed with a throwaway key and checks its index, as
+  # the release workflow does with the real key.
+  release_index() {
+    local tmp ok=0
+    tmp=$(mktemp -d) || return 1
+    dart run tool/sign_pack.dart --generate-key "$tmp/throwaway.seed" >/dev/null &&
+      dart run tool/build_release.dart --key-file "$tmp/throwaway.seed" --out "$tmp/release" >/dev/null &&
+      "${jsonschema[@]}" --schemafile schema/index.schema.json "$tmp/release/index.json" || ok=1
+    rm -rf "$tmp"
+    return $ok
+  }
+
+  if [ ${#jsonschema[@]} -eq 0 ]; then
+    skip "JSON Schema checks (check-jsonschema not found)" \
+      "uv (https://docs.astral.sh/uv/) or: pipx install check-jsonschema==$CHECK_JSONSCHEMA_VERSION"
+  else
+    schema_step schema/pack.schema.json 'packs/*/pack.yaml'
+    schema_step schema/fixtures.schema.json 'packs/*/fixtures.yaml'
+    schema_step schema/statement-pack.schema.json 'packs/*/statement.yaml'
+    schema_step schema/statement-fixtures.schema.json 'packs/*/statement_fixtures.yaml'
+    step "Release index matches its schema" "fix tool/build_release.dart or schema/index.schema.json" \
+      release_index
+  fi
+fi
+
+if [ ${#failed[@]} -gt 0 ]; then
+  echo >&2
+  echo "tool/check $mode: ${#failed[@]} step(s) failed:" >&2
+  printf '  - %s\n' "${failed[@]}" >&2
+  exit 1
+fi
+echo
+echo "tool/check $mode: all checks passed."

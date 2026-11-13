@@ -20,6 +20,7 @@ void main() {
         'equity',
         'loop',
         'airtel_money',
+        'standard_chartered',
       ]),
     );
   });

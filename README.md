@@ -1,6 +1,6 @@
 # ujumbe-parsers
 
-SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Equity, I&M, KCB, Loop and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
+SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
 
 **Codename:** ujumbe, Swahili for "message".
 
@@ -102,8 +102,8 @@ packs/<institution>/
 schema/                  JSON Schema for the pack, fixture and statement files and the release index.json
 tool/
   check_packs.dart       validate packs and run all fixtures
-  bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
-  message_examples.dart  regenerate docs/MESSAGES.md (--check in CI)
+  bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in tool/check)
+  message_examples.dart  regenerate docs/MESSAGES.md (--check in tool/check)
   sign_pack.dart         sign a pack (and generate a signing key)
   build_release.dart     build and sign a release: packs, index.json and signatures
 docs/MESSAGES.md         every sample message, by pack (generated)
@@ -164,19 +164,17 @@ dart run tool/sign_pack.dart --key-file /secure/place/ujumbe.seed packs/mpesa
 
 The tool refuses to sign a pack whose fixtures fail. Private keys stay outside the repo, in a hardware key or secrets manager; tests generate throwaway keys.
 
-Releases are signed in CI: pushing a `v*` tag runs every check, then `tool/build_release.dart` signs each pack and a signed `index.json` listing them, and uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
+Releases are signed in CI: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
 
 ## Testing
 
 ```sh
-dart format --output=none --set-exit-if-changed .
-dart analyze --fatal-infos
-dart run tool/bundle_packs.dart --check
-dart run tool/check_packs.dart
-dart test
+tool/setup-hooks     # once: run the checks before every push
+tool/check --fast    # format, analyse, generated files, pack fixtures
+tool/check           # all of that, plus dart test and the JSON Schema checks
 ```
 
-CI runs the same steps on every pull request, and also validates the packs against the JSON Schema.
+Checks run on your machine, not on GitHub; see [CONTRIBUTING.md](CONTRIBUTING.md#checks-run-on-your-machine).
 
 ## Get involved
 
