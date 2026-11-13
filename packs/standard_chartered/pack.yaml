@@ -5,7 +5,7 @@
 schema: 1
 id: standard_chartered
 name: Standard Chartered
-version: 0.1.0
+version: 0.2.0
 min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
@@ -19,3 +19,12 @@ rules:
     type: bank
     direction: in
     pattern: '^Dear Client, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{1,2})?) has been deposited to Acc\. ending with (?<own_account>\d{3,6})\.'
+
+  # "Dear Client, a transaction of KES 1900.00 was made on card ending 1234
+  # at SHOP NAME 1234567 on 2026-11-08." The trailing number is the shop's
+  # terminal, not part of its name. The message gives a date but no time,
+  # so the time is when the phone got it.
+  - id: card_payment
+    type: bank
+    direction: out
+    pattern: '^Dear Client, a transaction of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{1,2})?) was made on card ending (?<own_account>\d{3,6}) at (?<counterparty>.+?)(?: \d{4,})? on \d{4}-\d{2}-\d{2}\.'

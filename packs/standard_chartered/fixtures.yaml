@@ -38,3 +38,43 @@ samples:
       currency: USD
       own_account: '0002'
       time: '2026-11-15T09:05:00+03:00'
+
+  - name: card payment at a shop
+    sender: StanChart
+    received_at: '2026-11-08T13:20:00+03:00'
+    body: 'Dear Client, a transaction of KES 850.00 was made on card ending 0003 at SAMPLE CAFE TWO 0000000 on 2026-11-08. For any queries call 0700 000 000'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 85000
+      own_account: '0003'
+      counterparty: SAMPLE CAFE TWO
+      time: '2026-11-08T13:20:00+03:00'
+
+  - name: card payment without a terminal number
+    sender: StanChart
+    received_at: '2026-11-09T19:45:00+03:00'
+    body: 'Dear Client, a transaction of KES 3,400.00 was made on card ending 0003 at EXAMPLE SUPERMARKET on 2026-11-09. For any queries call 0700 000 000'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 340000
+      own_account: '0003'
+      counterparty: EXAMPLE SUPERMARKET
+      time: '2026-11-09T19:45:00+03:00'
+
+  - name: card payment in dollars
+    sender: StanChart
+    received_at: '2026-11-10T07:10:00+03:00'
+    body: 'Dear Client, a transaction of USD 12.99 was made on card ending 0003 at EXAMPLE STREAMING 0000001 on 2026-11-10. For any queries call 0700 000 000'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 1299
+      currency: USD
+      own_account: '0003'
+      counterparty: EXAMPLE STREAMING
+      time: '2026-11-10T07:10:00+03:00'
