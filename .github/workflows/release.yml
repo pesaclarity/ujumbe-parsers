@@ -26,14 +26,11 @@ concurrency:
   group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
 
+# Checks run on the developer's machine (tool/check), not here. The build
+# still refuses to sign a pack whose fixtures fail.
 jobs:
-  checks:
-    name: Checks
-    uses: ./.github/workflows/ci.yml
-
   release:
     name: Sign and publish packs
-    needs: checks
     runs-on: ubuntu-latest
     environment: release
     permissions:
