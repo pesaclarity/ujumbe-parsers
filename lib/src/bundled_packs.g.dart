@@ -228,9 +228,8 @@ rules:
 ''',
   'standard_chartered': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
-# Standard Chartered Kenya account alerts. The deposit shape comes from a
-# real alert, rewritten as synthetic samples; the sender ID still needs
-# confirming against a phone.
+# Standard Chartered Kenya account and card alerts, from sender StanChart
+# (confirmed). Shapes come from real alerts, rewritten as synthetic samples.
 schema: 1
 id: standard_chartered
 name: Standard Chartered
