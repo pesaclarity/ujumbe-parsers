@@ -1,0 +1,42 @@
+#!/bin/sh
+# Runs before every push: commit titles first, then every check.
+# Skip in an emergency: git push --no-verify
+#
+# Commit titles follow Conventional Commits, because release-please reads
+# them (and pull request titles, kept by squash merges) for the next version
+# and the changelog.
+pattern='^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert|style)(\([a-z0-9-]+\))?!?: [^ ].*$'
+zero=0000000000000000000000000000000000000000
+
+bad=0
+# git passes one line per ref: <local ref> <local sha> <remote ref> <remote sha>
+while read -r _ local_sha _ remote_sha; do
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac  # deleting a branch
+  if [ "$remote_sha" = "$zero" ] || ! git cat-file -e "$remote_sha" 2>/dev/null; then
+    range="$local_sha --not --remotes"  # new branch: commits on no remote yet
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  # Merge commits get their titles from git; skip them.
+  # shellcheck disable=SC2086 # $range is several arguments
+  titles=$(git log --no-merges --format='%h %s' $range) || exit 1
+  [ -n "$titles" ] || continue
+  wrong=$(printf '%s\n' "$titles" | while read -r sha title; do
+    case "$title" in "Revert "*|"fixup! "*|"squash! "*|"amend! "*) continue ;; esac
+    printf '%s\n' "$title" | grep -Eq "$pattern" || echo "  $sha $title"
+  done)
+  if [ -n "$wrong" ]; then
+    echo "These commit titles do not follow Conventional Commits:" >&2
+    echo "$wrong" >&2
+    bad=1
+  fi
+done
+
+if [ "$bad" -ne 0 ]; then
+  echo "Start each title with a type, e.g. 'feat: add Equity Bank pack', 'fix: keep footers out of rows' or 'feat!: change the pack format'." >&2
+  echo "Types: feat, fix, perf, refactor, docs, test, build, ci, chore, revert, style." >&2
+  echo "Fix with: git rebase -i <base> (reword), then push again." >&2
+  exit 1
+fi
+
+exec "$(git rev-parse --show-toplevel)/tool/check"
