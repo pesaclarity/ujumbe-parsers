@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only.
+pack: standard_chartered
+samples:
+  - name: deposit
+    sender: StanChart
+    received_at: '2026-11-13T10:15:00+03:00'
+    body: 'Dear Client, KES 25000.00 has been deposited to Acc. ending with 0000. For any queries call 0700 000 000'
+    expect:
+      rule: deposit
+      type: bank
+      direction: in
+      amount_minor: 2500000
+      own_account: '0000'
+      time: '2026-11-13T10:15:00+03:00'
+
+  - name: deposit with thousands separators
+    sender: StanChart
+    received_at: '2026-11-14T16:40:00+03:00'
+    body: 'Dear Client, KES 1,250.50 has been deposited to Acc. ending with 0001. For any queries call 0700 000 000'
+    expect:
+      rule: deposit
+      type: bank
+      direction: in
+      amount_minor: 125050
+      own_account: '0001'
+      time: '2026-11-14T16:40:00+03:00'
+
+  - name: USD deposit
+    sender: StanChart
+    received_at: '2026-11-15T09:05:00+03:00'
+    body: 'Dear Client, USD 300.00 has been deposited to Acc. ending with 0002. For any queries call 0700 000 000'
+    expect:
+      rule: deposit
+      type: bank
+      direction: in
+      amount_minor: 30000
+      currency: USD
+      own_account: '0002'
+      time: '2026-11-15T09:05:00+03:00'
