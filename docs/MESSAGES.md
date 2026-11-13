@@ -266,7 +266,7 @@ Dear Customer, M-PESA services will be briefly unavailable tonight from 11:00 PM
 
 ## Standard Chartered
 
-Pack `standard_chartered` 0.1.0 · senders `StanChart` · rules `deposit`
+Pack `standard_chartered` 0.2.0 · senders `StanChart` · rules `deposit`, `card_payment`
 
 **deposit** (`StanChart` → `deposit` · money in)
 
@@ -284,4 +284,22 @@ Dear Client, KES 1,250.50 has been deposited to Acc. ending with 0001. For any q
 
 ```text
 Dear Client, USD 300.00 has been deposited to Acc. ending with 0002. For any queries call 0700 000 000
+```
+
+**card payment at a shop** (`StanChart` → `card_payment` · money out)
+
+```text
+Dear Client, a transaction of KES 850.00 was made on card ending 0003 at SAMPLE CAFE TWO 0000000 on 2026-11-08. For any queries call 0700 000 000
+```
+
+**card payment without a terminal number** (`StanChart` → `card_payment` · money out)
+
+```text
+Dear Client, a transaction of KES 3,400.00 was made on card ending 0003 at EXAMPLE SUPERMARKET on 2026-11-09. For any queries call 0700 000 000
+```
+
+**card payment in dollars** (`StanChart` → `card_payment` · money out)
+
+```text
+Dear Client, a transaction of USD 12.99 was made on card ending 0003 at EXAMPLE STREAMING 0000001 on 2026-11-10. For any queries call 0700 000 000
 ```
