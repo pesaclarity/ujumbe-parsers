@@ -226,6 +226,29 @@ rules:
     direction: in
     pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*On (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s*Give Ksh(?<amount>[\d,]+\.\d{2}) cash to (?<counterparty>.+?)\s+New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
 ''',
+  'standard_chartered': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Standard Chartered Kenya account alerts. The deposit shape comes from a
+# real alert, rewritten as synthetic samples; the sender ID still needs
+# confirming against a phone.
+schema: 1
+id: standard_chartered
+name: Standard Chartered
+version: 0.1.0
+min_engine: 0.2.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - StanChart
+
+rules:
+  # "Dear Client, KES 100000.00 has been deposited to Acc. ending with 1234."
+  # No time, reference or balance: the time is when the phone got it.
+  - id: deposit
+    type: bank
+    direction: in
+    pattern: '^Dear Client, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{1,2})?) has been deposited to Acc\. ending with (?<own_account>\d{3,6})\.'
+''',
 };
 
 /// The YAML source of every statement pack in `packs/*/statement.yaml`, by id.

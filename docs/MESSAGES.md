@@ -10,6 +10,7 @@ All samples are synthetic: fake names, masked fake numbers and made-up receipts,
 - [KCB](#kcb)
 - [Loop](#loop)
 - [M-Pesa](#m-pesa)
+- [Standard Chartered](#standard-chartered)
 
 ## Airtel Money
 
@@ -261,4 +262,26 @@ TJA0000019 Confirmed . Your M-Shwari Deposit Account balance is Ksh1,300.00 .Tra
 
 ```text
 Dear Customer, M-PESA services will be briefly unavailable tonight from 11:00 PM for planned maintenance.
+```
+
+## Standard Chartered
+
+Pack `standard_chartered` 0.1.0 · senders `StanChart` · rules `deposit`
+
+**deposit** (`StanChart` → `deposit` · money in)
+
+```text
+Dear Client, KES 25000.00 has been deposited to Acc. ending with 0000. For any queries call 0700 000 000
+```
+
+**deposit with thousands separators** (`StanChart` → `deposit` · money in)
+
+```text
+Dear Client, KES 1,250.50 has been deposited to Acc. ending with 0001. For any queries call 0700 000 000
+```
+
+**USD deposit** (`StanChart` → `deposit` · money in)
+
+```text
+Dear Client, USD 300.00 has been deposited to Acc. ending with 0002. For any queries call 0700 000 000
 ```
