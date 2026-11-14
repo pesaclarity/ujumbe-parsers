@@ -96,6 +96,7 @@
           "additionalProperties": { "$ref": "#/$defs/direction" }
         },
         "time_format": { "$ref": "#/$defs/timeFormat" },
+        "due_format": { "$ref": "#/$defs/timeFormat" },
         "ignore_case": { "type": "boolean", "default": false },
         "pattern": {
           "description": "Dart regular expression. Named groups allowed: receipt, amount (required), direction, counterparty, account, own_account (the holder's own account number), currency (the code printed with the amount; else the pack's), balance, fee, time.",

@@ -19,6 +19,10 @@ const allowedGroups = {
   'balance',
   'fee',
   'time',
+  // A debt's total still owed after this message, such as Fuliza's.
+  'owed',
+  // When that debt is due; read with the rule's `due_format`.
+  'due',
 };
 
 /// The engine version assumed when a pack does not set `min_engine`.
@@ -117,6 +121,7 @@ class PackRule {
     required this.type,
     required this.pattern,
     required this.timeFormat,
+    this.dueFormat,
     this.direction,
     this.directionValues = const {},
   });
@@ -132,6 +137,9 @@ class PackRule {
 
   /// How to read the `time` group, if the pattern has one.
   final MessageTimeFormat? timeFormat;
+
+  /// How to read the `due` group (a date, no time), if the pattern has one.
+  final MessageTimeFormat? dueFormat;
 
   /// Fixed direction, when the message type always moves money one way.
   final Direction? direction;
@@ -283,6 +291,7 @@ class ParserPack {
       'direction',
       'direction_values',
       'time_format',
+      'due_format',
       'ignore_case',
       'pattern',
     });
@@ -293,6 +302,11 @@ class ParserPack {
       problems.add('$at.type: unknown type "$typeText"');
     }
     final format = r.timeFormat('time_format', optional: true) ?? defaultFormat;
+    final dueFormat = r.timeFormat(
+      'due_format',
+      optional: true,
+      dateOnly: true,
+    );
     final ignoreCase = r.boolean('ignore_case') ?? false;
 
     final patternText = r.string('pattern');
@@ -312,6 +326,9 @@ class ParserPack {
     }
     if (pattern != null && !groups.contains('amount')) {
       problems.add('$at.pattern: must capture an "amount" group');
+    }
+    if (groups.contains('due') && dueFormat == null) {
+      problems.add('$at: captures "due" but no due_format is set');
     }
     if (groups.contains('time') && format == null) {
       problems.add('$at: captures "time" but no time_format is set');
@@ -354,6 +371,7 @@ class ParserPack {
         type: type!,
         pattern: pattern!,
         timeFormat: groups.contains('time') ? format : null,
+        dueFormat: groups.contains('due') ? dueFormat : null,
         direction: direction,
         directionValues: Map.unmodifiable(directionValues),
       ),

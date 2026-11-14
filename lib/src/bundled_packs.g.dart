@@ -141,7 +141,8 @@ rules: []
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.2.0
+version: 0.3.0
+min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -186,7 +187,10 @@ rules:
   - id: fuliza
     type: fuliza
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.'
+    # The total still owed includes daily charges added since the last
+    # message, so the app can tell them apart from draws and access fees.
+    due_format: d/M/yy
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.(?: Total Fuliza M-(?:PESA|Pesa) outstanding amount is Ksh ?(?<owed>[\d,]+\.\d{2}) due on (?<due>\d{1,2}/\d{1,2}/\d{2})\.?)?'
 
   - id: fuliza_repayment
     type: fuliza_repayment
