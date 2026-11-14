@@ -9,9 +9,9 @@ const bundledPackSources = <String, String>{
 # (Uganda and Tanzania samples differ in currency and language). Every
 # message goes to the review inbox, where the reader suggests the fields
 # and the person's answers teach the app the layout. Add rules once real
-# Kenyan wording is known (as synthetic fixtures). The sender ID matches
-# Airtel Money Uganda's and needs confirming for Kenya; senders compare
-# case-insensitively, so AIRTELMONEY matches too.
+# Kenyan wording is known (as synthetic fixtures). Sender confirmed for
+# Kenya: messages arrive from "airtelmoney"; senders compare
+# case-insensitively, so AirtelMoney and AIRTELMONEY match too.
 schema: 1
 id: airtel_money
 name: Airtel Money
