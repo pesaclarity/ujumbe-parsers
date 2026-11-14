@@ -113,6 +113,23 @@ samples:
       fee_minor: 150
       receipt: TJA0000007
       time: '2026-10-26T13:44:58+03:00'
+      owed_minor: 15150
+      due: '2026-11-25T00:00:00+03:00'
+
+  - name: Fuliza draw with daily charges in the total owed
+    sender: MPESA
+    received_at: '2026-11-13T19:20:05+03:00'
+    body: 'TJA0000020 Confirmed. Fuliza M-PESA amount is Ksh 20.00. Access Fee charged Ksh 0.20. Total Fuliza M-PESA outstanding amount is Ksh168.50 due on 13/12/26. To check daily charges, Dial *000#OK Select Query Charges'
+    expect:
+      rule: fuliza
+      type: fuliza
+      direction: in
+      amount_minor: 2000
+      fee_minor: 20
+      receipt: TJA0000020
+      time: '2026-11-13T19:20:05+03:00'
+      owed_minor: 16850
+      due: '2026-12-13T00:00:00+03:00'
 
   - name: Fuliza repayment
     sender: MPESA
@@ -219,6 +236,8 @@ samples:
       fee_minor: 250
       receipt: TJA0000015
       time: '2026-10-26T15:10:00+03:00'
+      owed_minor: 179451
+      due: '2026-11-25T00:00:00+03:00'
 
   - name: move to M-Shwari
     sender: MPESA

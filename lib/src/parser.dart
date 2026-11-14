@@ -81,6 +81,8 @@ final class ParsedTransaction extends ParseResult {
     this.counterparty,
     this.account,
     this.ownAccount,
+    this.owedMinor,
+    this.due,
   });
 
   /// The pack and version that produced this result.
@@ -135,6 +137,14 @@ final class ParsedTransaction extends ParseResult {
   /// with a few digits at the start and the end (`0170*****4321`). Tells
   /// two accounts at the same institution apart.
   final String? ownAccount;
+
+  /// A debt's total still owed after this message, in minor units, such as
+  /// "Total Fuliza M-PESA outstanding amount". It includes charges the
+  /// lender added since its last message.
+  final int? owedMinor;
+
+  /// When [owedMinor] is due, as the start of that day in the pack's offset.
+  final DateTime? due;
 
   /// Key for matching this SMS against later statement imports: receipt,
   /// amount and time to the minute (statements rarely carry seconds).
@@ -247,6 +257,14 @@ class SmsParser {
 
     final fee = optionalMoney('fee');
     final balance = optionalMoney('balance');
+    final owed = optionalMoney('owed');
+    if (group('owed') != null && owed == null) return fail('unreadable owed');
+    DateTime? due;
+    final dueText = group('due');
+    if (dueText != null && rule.dueFormat != null) {
+      due = rule.dueFormat!.parse(dueText, utcOffset: pack.utcOffset);
+      if (due == null) return fail('unreadable due date "$dueText"');
+    }
     if (group('fee') != null && fee == null) return fail('unreadable fee');
     if (group('balance') != null && balance == null) {
       return fail('unreadable balance');
@@ -292,6 +310,8 @@ class SmsParser {
       counterparty: group('counterparty')?.replaceAll(_spaces, ' '),
       account: group('account'),
       ownAccount: group('own_account'),
+      owedMinor: owed,
+      due: due,
     );
   }
 }
