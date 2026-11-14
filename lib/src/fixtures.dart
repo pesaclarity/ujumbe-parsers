@@ -108,6 +108,8 @@ class FixtureSample {
     'own_account',
     'currency',
     'time',
+    'owed_minor',
+    'due',
   ];
 
   /// Lists how [result] differs from what this sample expects, for a pack
@@ -136,11 +138,15 @@ class FixtureSample {
       'own_account': result.ownAccount,
       'currency': result.currency,
       'time': result.time,
+      'owed_minor': result.owedMinor,
+      'due': result.due,
     };
     final problems = <String>[];
     for (final field in fields) {
       var want = expected[field];
-      if (field == 'time' && want is String) want = DateTime.parse(want);
+      if ((field == 'time' || field == 'due') && want is String) {
+        want = DateTime.parse(want);
+      }
       if (field == 'currency') want ??= packCurrency;
       if (want != actual[field]) {
         problems.add('$field: expected $want, got ${actual[field]}');

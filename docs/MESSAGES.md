@@ -136,7 +136,7 @@ Example alert: KES 2,500.00 received from JANE DOE on 26/10/2026 at 10:02. Ref E
 
 ## M-Pesa
 
-Pack `mpesa` 0.2.0 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
+Pack `mpesa` 0.3.0 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
 
 **send money to a person** (`MPESA` → `sent` · money out)
 
@@ -184,6 +184,12 @@ TJA0000006 confirmed.You bought Ksh100.00 of airtime on 26/10/26 at 7:00 PM.New 
 
 ```text
 TJA0000007 Confirmed. Fuliza M-Pesa amount is Ksh 150.00. Access Fee charged Ksh 1.50. Total Fuliza M-Pesa outstanding amount is Ksh 151.50 due on 25/11/26. To check daily charges, Dial *000*0#OK Select Query Charges
+```
+
+**Fuliza draw with daily charges in the total owed** (`MPESA` → `fuliza` · money in)
+
+```text
+TJA0000020 Confirmed. Fuliza M-PESA amount is Ksh 20.00. Access Fee charged Ksh 0.20. Total Fuliza M-PESA outstanding amount is Ksh168.50 due on 13/12/26. To check daily charges, Dial *000#OK Select Query Charges
 ```
 
 **Fuliza repayment** (`MPESA` → `fuliza_repayment` · money out)
