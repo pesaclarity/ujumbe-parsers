@@ -1,0 +1,5 @@
+#!/bin/sh
+# Points git at the hooks in .githooks/ (a pre-push hook). Safe to run more than once.
+cd "$(dirname "$0")/.." || exit 1
+git config core.hooksPath .githooks
+echo "Git hooks enabled from .githooks/ (skip once with --no-verify)."

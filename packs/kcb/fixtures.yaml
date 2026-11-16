@@ -12,7 +12,7 @@ samples:
       amount_minor: 300000
       balance_minor: 700000
       receipt: KCB0000000001
-      account: '****0001'
+      own_account: '****0001'
       time: '2026-10-26T15:20:00+03:00'
 
   - name: account credited
@@ -25,8 +25,22 @@ samples:
       amount_minor: 1250050
       balance_minor: 1950050
       receipt: KCB0000000002
-      account: '****0001'
+      own_account: '****0001'
       time: '2026-10-27T09:00:00+03:00'
+
+  - name: USD account debited
+    sender: KCB
+    body: 'Dear Customer, USD 250.00 has been debited from your account ****0002 on 03/11/2026 at 10:15. Transaction Ref: KCB0000000009. Your available balance is USD 1,250.00.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: out
+      amount_minor: 25000
+      balance_minor: 125000
+      currency: USD
+      receipt: KCB0000000009
+      own_account: '****0002'
+      time: '2026-11-03T10:15:00+03:00'
 
   - name: send to a mobile wallet
     sender: KCB
@@ -38,7 +52,7 @@ samples:
       amount_minor: 100000
       receipt: KCB0000000000003
       counterparty: JANE DOE
-      account: 123****456
+      own_account: 123****456
       time: '2026-10-26T09:15:00+03:00'
 
   - name: named account credited
@@ -52,7 +66,7 @@ samples:
       balance_minor: 900000
       receipt: KCB0000000004
       counterparty: JOHN KAMAU
-      account: '****1234'
+      own_account: '****1234'
       time: '2026-10-26T21:15:00+03:00'
 
   - name: balance enquiry goes to the review inbox

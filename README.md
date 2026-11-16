@@ -1,6 +1,6 @@
 # ujumbe-parsers
 
-SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Equity, I&M, KCB, Loop and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
+SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Co-operative Bank, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and with plain Dart on any machine.
 
 **Codename:** ujumbe, Swahili for "message".
 
@@ -102,8 +102,8 @@ packs/<institution>/
 schema/                  JSON Schema for the pack, fixture and statement files and the release index.json
 tool/
   check_packs.dart       validate packs and run all fixtures
-  bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in CI)
-  message_examples.dart  regenerate docs/MESSAGES.md (--check in CI)
+  bundle_packs.dart      regenerate lib/src/bundled_packs.g.dart (--check in tool/check)
+  message_examples.dart  regenerate docs/MESSAGES.md (--check in tool/check)
   sign_pack.dart         sign a pack (and generate a signing key)
   build_release.dart     build and sign a release: packs, index.json and signatures
 docs/MESSAGES.md         every sample message, by pack (generated)
@@ -117,7 +117,7 @@ test/                    engine unit tests and a test over every pack
 New banks, SACCOs and wallets are the main way to contribute. Every pack is gated by its own samples.
 
 1. **Create the directory.** `packs/<id>/` where `<id>` is lower case with underscores, e.g. `co_op_bank` or `airtel_money`. The pack's `id` must match.
-2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency`, `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
+2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency` (for messages that print none), `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
 
    | Group | Meaning |
    | --- | --- |
@@ -125,11 +125,15 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `receipt` | The institution's reference |
    | `direction` | Captured word such as "debited", mapped by `direction_values` (otherwise set a fixed `direction: in` or `out`) |
    | `counterparty` | The other party as printed |
-   | `account` | Phone, account or paybill reference, as printed (usually masked) |
+   | `account` | The other side's phone, account or paybill reference, as printed (usually masked) |
+   | `own_account` | The account holder's own account number, as printed (`0170*****4321`); tells two accounts at the same bank apart |
+   | `currency` | The currency printed with the amount (`USD`, `EUR`; `Ksh` and `Kshs` read as KES). Without it, amounts are in the pack's `currency` |
    | `balance`, `fee` | Money after the transaction, and its cost |
    | `time` | Date and time as printed, read with `time_format` |
+   | `owed` | A debt's total still owed after this message, such as Fuliza's outstanding amount |
+   | `due` | When that debt is due, a date read with the rule's `due_format` |
 
-   Rules are tried in order and the first match wins, so put specific shapes before general ones. If a message prints no time, the engine uses the time the phone received it.
+   Rules are tried in order and the first match wins, so put specific shapes before general ones. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. A pack that uses `own_account` or `currency` needs `min_engine: 0.2.0`, and one that uses `owed` or `due` needs `min_engine: 0.3.0`. If a message prints no time, the engine uses the time the phone received it.
 3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
 4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, `dart run tool/message_examples.dart` to list its samples in [docs/MESSAGES.md](docs/MESSAGES.md), then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.
@@ -162,19 +166,24 @@ dart run tool/sign_pack.dart --key-file /secure/place/ujumbe.seed packs/mpesa
 
 The tool refuses to sign a pack whose fixtures fail. Private keys stay outside the repo, in a hardware key or secrets manager; tests generate throwaway keys.
 
-Releases are signed in CI: pushing a `v*` tag runs every check, then `tool/build_release.dart` signs each pack and a signed `index.json` listing them, and uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
+Releases are signed by a GitHub Actions workflow: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
 
 ## Testing
 
 ```sh
-dart format --output=none --set-exit-if-changed .
-dart analyze --fatal-infos
-dart run tool/bundle_packs.dart --check
-dart run tool/check_packs.dart
-dart test
+tool/setup-hooks     # once: run the checks before every push
+tool/check --fast    # format, analyse, generated files, pack fixtures
+tool/check           # all of that, plus dart test and the JSON Schema checks
 ```
 
-CI runs the same steps on every pull request, and also validates the packs against the JSON Schema.
+Checks run on your machine, not on GitHub; see [CONTRIBUTING.md](CONTRIBUTING.md#checks-run-on-your-machine).
+
+## Get involved
+
+- **Star [the app](https://github.com/pesaclarity/pesaclarity-app)** so more people find a private money app that runs on their phone.
+- The easiest way in: add a pack for a bank, Sacco or wallet you use. See [Adding an institution](#adding-an-institution); no Flutter needed.
+- **Pick a first issue:** [good first issues](https://github.com/pesaclarity/ujumbe-parsers/issues?q=is%3Aopen+label%3A%22good+first+issue%22) or [help wanted](https://github.com/pesaclarity/ujumbe-parsers/issues?q=is%3Aopen+label%3A%22help+wanted%22).
+- **Read [CONTRIBUTING.md](CONTRIBUTING.md)** before your first pull request. Never include real messages, statements or phone numbers.
 
 ## Licence
 

@@ -9,9 +9,9 @@ const bundledPackSources = <String, String>{
 # (Uganda and Tanzania samples differ in currency and language). Every
 # message goes to the review inbox, where the reader suggests the fields
 # and the person's answers teach the app the layout. Add rules once real
-# Kenyan wording is known (as synthetic fixtures). The sender ID matches
-# Airtel Money Uganda's and needs confirming for Kenya; senders compare
-# case-insensitively, so AIRTELMONEY matches too.
+# Kenyan wording is known (as synthetic fixtures). Sender confirmed for
+# Kenya: messages arrive from "airtelmoney"; senders compare
+# case-insensitively, so AirtelMoney and AIRTELMONEY match too.
 schema: 1
 id: airtel_money
 name: Airtel Money
@@ -22,6 +22,43 @@ senders:
   - AirtelMoney
 rules: []
 ''',
+  'co_op_bank': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Transaction shapes based on Coop alerts, expressed as synthetic patterns.
+schema: 1
+id: co_op_bank
+name: Co-operative Bank
+version: 0.1.1
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - CoopBank
+time_format: "dd-MMM-yyyy HH:mm:ss"
+
+rules:
+  # No rule for "You have received Kes ... on your M-pesa from ...": that
+  # money lands on M-Pesa and need not touch a Co-op account. M-Pesa's own
+  # message records it, so reading this one too would count it twice.
+
+  - id: card_withdrawal
+    type: withdrawal
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card CASH transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: card_payment
+    type: bank
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card PAYMENT transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: paybill_sent
+    type: paybill
+    direction: out
+    ignore_case: true
+    time_format: "M/d/yyyy 'at' HH:mm:ss"
+    pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
+''',
   'equity': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 # Shapes from public samples, rewritten as synthetic fixtures. Equity
@@ -29,7 +66,8 @@ rules: []
 schema: 1
 id: equity
 name: Equity Bank
-version: 0.1.0
+version: 0.2.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -44,14 +82,15 @@ rules:
   - id: wallet_transfer
     type: bank
     direction: out
-    pattern: '^Your transaction of Kshs?\.? ?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+has been credited to\s+\d{9,12}\s+(?<counterparty>.+?)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+)\.\s*(?:M-?PESA Ref\.\s*(?<account>[A-Z0-9]+)\s+)?on\s+(?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2}:\d{2})\.'
+    pattern: '^Your transaction of (?<currency>Kshs?)\.? ?(?<amount>[\d,]+(?:\.\d{1,2})?)\s+has been credited to\s+\d{9,12}\s+(?<counterparty>.+?)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+)\.\s*(?:M-?PESA Ref\.\s*(?<account>[A-Z0-9]+)\s+)?on\s+(?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2}:\d{2})\.'
 
-  # Money into the account; the currency follows the amount.
+  # Money into the account; the currency follows the amount, so a USD
+  # account's messages read as USD. "own_account" is the masked account.
   - id: received
     type: bank
     direction: in
     time_format: "d MMM yyyy 'at' HH:mm"
-    pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) KES from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
+    pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) (?<currency>[A-Z]{3}) from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<own_account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
 ''',
   'im_bank': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -60,7 +99,8 @@ rules:
 schema: 1
 id: im_bank
 name: I&M Bank
-version: 0.1.0
+version: 0.2.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -73,7 +113,7 @@ rules:
     direction_values:
       debited: out
       credited: in
-    pattern: '^Dear Customer, your account (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) on (?<time>\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\. Ref: (?<receipt>[A-Z0-9]+)\. Avail\. bal KES ?(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^Dear Customer, your account (?<own_account>[\d*]+) has been (?<direction>debited|credited) with (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) on (?<time>\d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2})\. Ref: (?<receipt>[A-Z0-9]+)\. Avail\. bal [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})\.'
 ''',
   'kcb': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -82,7 +122,8 @@ rules:
 schema: 1
 id: kcb
 name: KCB
-version: 0.2.0
+version: 0.3.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -95,7 +136,7 @@ rules:
     direction_values:
       debited: out
       credited: in
-    pattern: '^Dear Customer, KES ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is KES ?(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^Dear Customer, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<own_account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})\.'
 
   # Sent from a KCB account to a mobile wallet; the receipt leads.
   # "account" is the masked KCB account, "counterparty" the recipient.
@@ -103,7 +144,7 @@ rules:
     type: bank
     direction: out
     time_format: "yyyy-MM-dd hh:mm:ss a"
-    pattern: '^(?<receipt>[A-Z0-9]{16})\s+KES ?(?<amount>[\d,]+\.\d{2}) sent from (?<account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
+    pattern: '^(?<receipt>[A-Z0-9]{16})\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) sent from (?<own_account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
 
   - id: account_named
     type: bank
@@ -111,7 +152,7 @@ rules:
       debited: out
       credited: in
     time_format: "dd/MM/yyyy 'at' h:mm a"
-    pattern: '^Dear [^,]+, your KCB A/C (?<account>[\d*]+) has been (?<direction>debited|credited) with KES ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal KES ?(?<balance>[\d,]+\.\d{2})'
+    pattern: '^Dear [^,]+, your KCB A/C (?<own_account>[\d*]+) has been (?<direction>debited|credited) with (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})'
 ''',
   'loop': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -137,7 +178,8 @@ rules: []
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.2.0
+version: 0.3.1
+min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -182,12 +224,18 @@ rules:
   - id: fuliza
     type: fuliza
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.'
+    # The total still owed includes daily charges added since the last
+    # message, so the app can tell them apart from draws and access fees.
+    due_format: d/M/yy
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.(?: Total Fuliza M-(?:PESA|Pesa) outstanding amount is Ksh ?(?<owed>[\d,]+\.\d{2}) due on (?<due>\d{1,2}/\d{1,2}/\d{2})\.?)?'
 
   - id: fuliza_repayment
     type: fuliza_repayment
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
+    # Wording varies: "M-Pesa" in mixed case, and "outstanding Fuliza
+    # M-PESA amount" on partial repayments.
+    ignore_case: true
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA(?: amount)?\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
 
   # "account" holds the receipt of the transaction being reversed. Money
   # comes back to the sender ("credited") or is taken back from the
@@ -221,6 +269,37 @@ rules:
     type: received
     direction: in
     pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*On (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s*Give Ksh(?<amount>[\d,]+\.\d{2}) cash to (?<counterparty>.+?)\s+New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+''',
+  'standard_chartered': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Standard Chartered Kenya account and card alerts, from sender StanChart
+# (confirmed). Shapes come from real alerts, rewritten as synthetic samples.
+schema: 1
+id: standard_chartered
+name: Standard Chartered
+version: 0.2.0
+min_engine: 0.2.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - StanChart
+
+rules:
+  # "Dear Client, KES 100000.00 has been deposited to Acc. ending with 1234."
+  # No time, reference or balance: the time is when the phone got it.
+  - id: deposit
+    type: bank
+    direction: in
+    pattern: '^Dear Client, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{1,2})?) has been deposited to Acc\. ending with (?<own_account>\d{3,6})\.'
+
+  # "Dear Client, a transaction of KES 1900.00 was made on card ending 1234
+  # at SHOP NAME 1234567 on 2026-11-08." The trailing number is the shop's
+  # terminal, not part of its name. The message gives a date but no time,
+  # so the time is when the phone got it.
+  - id: card_payment
+    type: bank
+    direction: out
+    pattern: '^Dear Client, a transaction of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{1,2})?) was made on card ending (?<own_account>\d{3,6}) at (?<counterparty>.+?)(?: \d{4,})? on \d{4}-\d{2}-\d{2}\.'
 ''',
 };
 

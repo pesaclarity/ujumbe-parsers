@@ -12,7 +12,7 @@ samples:
       amount_minor: 250000
       balance_minor: 1000000
       receipt: IMB000000001
-      account: 0000****001
+      own_account: 0000****001
       time: '2026-10-26T14:05:00+03:00'
 
   - name: account credited
@@ -25,5 +25,19 @@ samples:
       amount_minor: 4500000
       balance_minor: 5500000
       receipt: IMB000000002
-      account: 0000****001
+      own_account: 0000****001
       time: '2026-10-28T08:30:00+03:00'
+
+  - name: EUR account credited
+    sender: I&M
+    body: 'Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 03-Nov-2026 09:00. Ref: IMB000000003. Avail. bal EUR 2,450.00.'
+    expect:
+      rule: account_alert
+      type: bank
+      direction: in
+      amount_minor: 200000
+      balance_minor: 245000
+      currency: EUR
+      receipt: IMB000000003
+      own_account: 0000****002
+      time: '2026-11-03T09:00:00+03:00'

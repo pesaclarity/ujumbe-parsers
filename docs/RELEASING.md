@@ -26,11 +26,11 @@ Everything else comes back as a `PackRejection` with a typed `PackRejectionReaso
 
 ## Making a release
 
-Changes go to `dev` through pull requests with [Conventional Commits](https://www.conventionalcommits.org) titles (`feat: …`, `fix: …`, `feat!: …` for a breaking change). `dev` reaches `main` only through a pull request that passes CI and QA (the `Release gate` check), merged with a merge commit.
+Changes go to `dev` through pull requests with [Conventional Commits](https://www.conventionalcommits.org) titles (`feat: …`, `fix: …`, `feat!: …` for a breaking change). `dev` reaches `main` only through a pull request that passes QA (the `Release gate` check), after `tool/check` has passed locally, merged with a merge commit.
 
 1. Bump the `version` of every pack whose rules changed. If a pack relies on an engine feature added in this release, set its `min_engine` to the next engine version, so older apps skip it instead of failing on it.
 2. On `main`, release-please keeps a release pull request open. It sets the next version from the titles (`feat` bumps the minor, `fix` the patch; before 1.0 a breaking change bumps the minor), in `pubspec.yaml` and `engineVersion` together, and writes the `CHANGELOG.md` entry.
-3. Merging it tags `vX.Y.Z` and runs **Release packs**: every CI check, the tag against `pubspec.yaml`, a build signed with the `UJUMBE_SIGNING_KEY` secret, `index.json` against its schema, and the upload to the GitHub release. It prints the public key it signed with; check it is one the app pins. The release is then merged back into `dev`.
+3. Merging it tags `vX.Y.Z` and runs **Release packs**: the tag against `pubspec.yaml`, a build signed with the `UJUMBE_SIGNING_KEY` secret, `index.json` against its schema, and the upload to the GitHub release. It prints the public key it signed with; check it is one the app pins. The release is then merged back into `dev`.
 
 A tag pushed by hand (`git tag v0.1.0 && git push origin v0.1.0`) also runs **Release packs**.
 

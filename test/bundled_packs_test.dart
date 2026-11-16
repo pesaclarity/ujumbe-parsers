@@ -33,11 +33,13 @@ void main() {
       bundledPackIds,
       containsAll([
         'airtel_money',
+        'standard_chartered',
         'equity',
         'im_bank',
         'kcb',
         'loop',
         'mpesa',
+        'co_op_bank',
       ]),
     );
     final packs = loadBundledPacks();

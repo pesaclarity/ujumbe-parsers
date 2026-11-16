@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Transaction shapes based on Coop alerts, expressed as synthetic patterns.
+schema: 1
+id: co_op_bank
+name: Co-operative Bank
+version: 0.1.1
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - CoopBank
+time_format: "dd-MMM-yyyy HH:mm:ss"
+
+rules:
+  # No rule for "You have received Kes ... on your M-pesa from ...": that
+  # money lands on M-Pesa and need not touch a Co-op account. M-Pesa's own
+  # message records it, so reading this one too would count it twice.
+
+  - id: card_withdrawal
+    type: withdrawal
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card CASH transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: card_payment
+    type: bank
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card PAYMENT transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: paybill_sent
+    type: paybill
+    direction: out
+    ignore_case: true
+    time_format: "M/d/yyyy 'at' HH:mm:ss"
+    pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
