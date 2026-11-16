@@ -177,7 +177,7 @@ Example alert: KES 2,500.00 received from JANE DOE on 26/10/2026 at 10:02. Ref E
 
 ## M-Pesa
 
-Pack `mpesa` 0.3.0 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
+Pack `mpesa` 0.3.1 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
 
 **send money to a person** (`MPESA` → `sent` · money out)
 
@@ -237,6 +237,18 @@ TJA0000020 Confirmed. Fuliza M-PESA amount is Ksh 20.00. Access Fee charged Ksh 
 
 ```text
 TJA0000008 Confirmed. Ksh 151.50 from your M-PESA has been used to fully pay your outstanding Fuliza M-PESA. Available Fuliza M-PESA limit is Ksh 2,000.00. M-PESA balance is Ksh8,753.00.
+```
+
+**Fuliza repayment, mixed case** (`MPESA` → `fuliza_repayment` · money out)
+
+```text
+TJA0000021 Confirmed. Ksh 101.00 from your M-Pesa has been used to fully pay your outstanding Fuliza M-Pesa. Available Fuliza M-Pesa limit is Ksh 2,000.00. M-Pesa balance is Ksh1,899.00.
+```
+
+**Fuliza partial repayment, outstanding amount** (`MPESA` → `fuliza_repayment` · money out)
+
+```text
+TJA0000022 Confirmed. Ksh 50.00 from your M-PESA has been used to partially pay your outstanding Fuliza M-PESA amount. Available Fuliza M-PESA limit is Ksh 1,050.00. M-PESA balance is Ksh0.00.
 ```
 
 **reversal of a send** (`MPESA` → `reversal` · money in)
