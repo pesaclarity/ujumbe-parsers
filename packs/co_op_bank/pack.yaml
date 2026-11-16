@@ -3,20 +3,17 @@
 schema: 1
 id: co_op_bank
 name: Co-operative Bank
-version: 0.1.0
+version: 0.1.1
 currency: KES
 utc_offset: "+03:00"
 senders:
   - CoopBank
-  - Co-opBank
 time_format: "dd-MMM-yyyy HH:mm:ss"
 
 rules:
-  - id: mobile_money_received
-    type: received
-    direction: in
-    ignore_case: true
-    pattern: '^Dear [^,]+,\s*You have received Kes\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+on your M-pesa from\s+(?<counterparty>.+?)\s*\.\s*Bank Ref:\s*[A-Z0-9]+\.\s*Mpesa Ref:\s*(?<receipt>[A-Z0-9]+)\.'
+  # No rule for "You have received Kes ... on your M-pesa from ...": that
+  # money lands on M-Pesa and need not touch a Co-op account. M-Pesa's own
+  # message records it, so reading this one too would count it twice.
 
   - id: card_withdrawal
     type: withdrawal

@@ -31,12 +31,18 @@ Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at
 
 ## Co-operative Bank
 
-Pack `co_op_bank` 0.1.0 · senders `CoopBank`, `Co-opBank` · rules `mobile_money_received`, `card_withdrawal`, `card_payment`, `paybill_sent`
+Pack `co_op_bank` 0.1.1 · senders `CoopBank` · rules `card_withdrawal`, `card_payment`, `paybill_sent`
 
-**receive money from M-Pesa** (`CoopBank` → `mobile_money_received` · money in)
+**money sent to M-Pesa is left to M-Pesa's own message** (`CoopBank` → review inbox)
 
 ```text
 Dear JANE, You have received Kes 45000 on your M-pesa from SAMPLE COMMUNITY CHURCH.Bank Ref:CBK000000000001.Mpesa Ref:MPX00000001.
+```
+
+**sender in capitals** (`COOPBANK` → `card_payment` · money out)
+
+```text
+Dear ALEX, Card PAYMENT transaction dated 28-OCT-2026 12:05:10 of KES 450  SAMPLE SHOP>NAIROBI KE Was Successful.Enquiries 0000000000.
 ```
 
 **withdraw cash from a branch ATM** (`CoopBank` → `card_withdrawal` · money out)
