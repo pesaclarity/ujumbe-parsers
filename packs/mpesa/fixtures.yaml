@@ -113,6 +113,23 @@ samples:
       fee_minor: 150
       receipt: TJA0000007
       time: '2026-10-26T13:44:58+03:00'
+      owed_minor: 15150
+      due: '2026-11-25T00:00:00+03:00'
+
+  - name: Fuliza draw with daily charges in the total owed
+    sender: MPESA
+    received_at: '2026-11-13T19:20:05+03:00'
+    body: 'TJA0000020 Confirmed. Fuliza M-PESA amount is Ksh 20.00. Access Fee charged Ksh 0.20. Total Fuliza M-PESA outstanding amount is Ksh168.50 due on 13/12/26. To check daily charges, Dial *000#OK Select Query Charges'
+    expect:
+      rule: fuliza
+      type: fuliza
+      direction: in
+      amount_minor: 2000
+      fee_minor: 20
+      receipt: TJA0000020
+      time: '2026-11-13T19:20:05+03:00'
+      owed_minor: 16850
+      due: '2026-12-13T00:00:00+03:00'
 
   - name: Fuliza repayment
     sender: MPESA
@@ -126,6 +143,32 @@ samples:
       balance_minor: 875300
       receipt: TJA0000008
       time: '2026-10-27T08:05:10+03:00'
+
+  - name: Fuliza repayment, mixed case
+    sender: MPESA
+    received_at: '2026-10-28T09:00:00+03:00'
+    body: 'TJA0000021 Confirmed. Ksh 101.00 from your M-Pesa has been used to fully pay your outstanding Fuliza M-Pesa. Available Fuliza M-Pesa limit is Ksh 2,000.00. M-Pesa balance is Ksh1,899.00.'
+    expect:
+      rule: fuliza_repayment
+      type: fuliza_repayment
+      direction: out
+      amount_minor: 10100
+      balance_minor: 189900
+      receipt: TJA0000021
+      time: '2026-10-28T09:00:00+03:00'
+
+  - name: Fuliza partial repayment, outstanding amount
+    sender: MPESA
+    received_at: '2026-10-29T07:30:00+03:00'
+    body: 'TJA0000022 Confirmed. Ksh 50.00 from your M-PESA has been used to partially pay your outstanding Fuliza M-PESA amount. Available Fuliza M-PESA limit is Ksh 1,050.00. M-PESA balance is Ksh0.00.'
+    expect:
+      rule: fuliza_repayment
+      type: fuliza_repayment
+      direction: out
+      amount_minor: 5000
+      balance_minor: 0
+      receipt: TJA0000022
+      time: '2026-10-29T07:30:00+03:00'
 
   - name: reversal of a send
     sender: MPESA
@@ -219,6 +262,8 @@ samples:
       fee_minor: 250
       receipt: TJA0000015
       time: '2026-10-26T15:10:00+03:00'
+      owed_minor: 179451
+      due: '2026-11-25T00:00:00+03:00'
 
   - name: move to M-Shwari
     sender: MPESA

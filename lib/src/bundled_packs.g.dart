@@ -9,9 +9,9 @@ const bundledPackSources = <String, String>{
 # (Uganda and Tanzania samples differ in currency and language). Every
 # message goes to the review inbox, where the reader suggests the fields
 # and the person's answers teach the app the layout. Add rules once real
-# Kenyan wording is known (as synthetic fixtures). The sender ID matches
-# Airtel Money Uganda's and needs confirming for Kenya; senders compare
-# case-insensitively, so AIRTELMONEY matches too.
+# Kenyan wording is known (as synthetic fixtures). Sender confirmed for
+# Kenya: messages arrive from "airtelmoney"; senders compare
+# case-insensitively, so AirtelMoney and AIRTELMONEY match too.
 schema: 1
 id: airtel_money
 name: Airtel Money
@@ -21,6 +21,43 @@ utc_offset: "+03:00"
 senders:
   - AirtelMoney
 rules: []
+''',
+  'co_op_bank': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Transaction shapes based on Coop alerts, expressed as synthetic patterns.
+schema: 1
+id: co_op_bank
+name: Co-operative Bank
+version: 0.1.1
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - CoopBank
+time_format: "dd-MMM-yyyy HH:mm:ss"
+
+rules:
+  # No rule for "You have received Kes ... on your M-pesa from ...": that
+  # money lands on M-Pesa and need not touch a Co-op account. M-Pesa's own
+  # message records it, so reading this one too would count it twice.
+
+  - id: card_withdrawal
+    type: withdrawal
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card CASH transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: card_payment
+    type: bank
+    direction: out
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card PAYMENT transaction dated (?<time>\d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2}) of KES\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+(?<counterparty>.+?)>\s*[^.]+ Was Successful\.'
+
+  - id: paybill_sent
+    type: paybill
+    direction: out
+    ignore_case: true
+    time_format: "M/d/yyyy 'at' HH:mm:ss"
+    pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
 ''',
   'equity': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -141,7 +178,8 @@ rules: []
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.2.0
+version: 0.3.1
+min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -186,12 +224,18 @@ rules:
   - id: fuliza
     type: fuliza
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.'
+    # The total still owed includes daily charges added since the last
+    # message, so the app can tell them apart from draws and access fees.
+    due_format: d/M/yy
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Fuliza M-(?:PESA|Pesa) amount is Ksh ?(?<amount>[\d,]+\.\d{2})\. Access Fee charged Ksh ?(?<fee>[\d,]+\.\d{2})\.(?: Total Fuliza M-(?:PESA|Pesa) outstanding amount is Ksh ?(?<owed>[\d,]+\.\d{2}) due on (?<due>\d{1,2}/\d{1,2}/\d{2})\.?)?'
 
   - id: fuliza_repayment
     type: fuliza_repayment
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
+    # Wording varies: "M-Pesa" in mixed case, and "outstanding Fuliza
+    # M-PESA amount" on partial repayments.
+    ignore_case: true
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA(?: amount)?\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
 
   # "account" holds the receipt of the transaction being reversed. Money
   # comes back to the sender ("credited") or is taken back from the

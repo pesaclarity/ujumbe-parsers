@@ -1,6 +1,6 @@
 # ujumbe-parsers
 
-SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and in CI with plain Dart.
+SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Co-operative Bank, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and with plain Dart on any machine.
 
 **Codename:** ujumbe, Swahili for "message".
 
@@ -130,8 +130,10 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `currency` | The currency printed with the amount (`USD`, `EUR`; `Ksh` and `Kshs` read as KES). Without it, amounts are in the pack's `currency` |
    | `balance`, `fee` | Money after the transaction, and its cost |
    | `time` | Date and time as printed, read with `time_format` |
+   | `owed` | A debt's total still owed after this message, such as Fuliza's outstanding amount |
+   | `due` | When that debt is due, a date read with the rule's `due_format` |
 
-   Rules are tried in order and the first match wins, so put specific shapes before general ones. A pack that uses `own_account` or `currency` needs `min_engine: 0.2.0`. If a message prints no time, the engine uses the time the phone received it.
+   Rules are tried in order and the first match wins, so put specific shapes before general ones. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. A pack that uses `own_account` or `currency` needs `min_engine: 0.2.0`, and one that uses `owed` or `due` needs `min_engine: 0.3.0`. If a message prints no time, the engine uses the time the phone received it.
 3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
 4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, `dart run tool/message_examples.dart` to list its samples in [docs/MESSAGES.md](docs/MESSAGES.md), then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.
@@ -164,7 +166,7 @@ dart run tool/sign_pack.dart --key-file /secure/place/ujumbe.seed packs/mpesa
 
 The tool refuses to sign a pack whose fixtures fail. Private keys stay outside the repo, in a hardware key or secrets manager; tests generate throwaway keys.
 
-Releases are signed in CI: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
+Releases are signed by a GitHub Actions workflow: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
 
 ## Testing
 

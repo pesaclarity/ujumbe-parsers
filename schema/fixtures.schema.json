@@ -41,6 +41,8 @@
                   "amount_minor": { "type": "integer", "minimum": 0 },
                   "fee_minor": { "type": "integer", "minimum": 0 },
                   "balance_minor": { "type": "integer" },
+                  "owed_minor": { "type": "integer", "minimum": 0 },
+                  "due": { "type": "string" },
                   "receipt": { "type": "string" },
                   "counterparty": { "type": "string" },
                   "account": { "type": "string" },

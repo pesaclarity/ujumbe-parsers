@@ -5,6 +5,7 @@ Every sample message the packs are tested with, generated from `packs/*/fixtures
 All samples are synthetic: fake names, masked fake numbers and made-up receipts, written in the shape of real alerts. "Review inbox" means no rule reads the message, so the person checks it once.
 
 - [Airtel Money](#airtel-money)
+- [Co-operative Bank](#co-operative-bank)
 - [Equity Bank](#equity-bank)
 - [I&M Bank](#im-bank)
 - [KCB](#kcb)
@@ -26,6 +27,52 @@ Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Ba
 
 ```text
 Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.
+```
+
+## Co-operative Bank
+
+Pack `co_op_bank` 0.1.1 · senders `CoopBank` · rules `card_withdrawal`, `card_payment`, `paybill_sent`
+
+**money sent to M-Pesa is left to M-Pesa's own message** (`CoopBank` → review inbox)
+
+```text
+Dear JANE, You have received Kes 45000 on your M-pesa from SAMPLE COMMUNITY CHURCH.Bank Ref:CBK000000000001.Mpesa Ref:MPX00000001.
+```
+
+**sender in capitals** (`COOPBANK` → `card_payment` · money out)
+
+```text
+Dear ALEX, Card PAYMENT transaction dated 28-OCT-2026 12:05:10 of KES 450  SAMPLE SHOP>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**withdraw cash from a branch ATM** (`CoopBank` → `card_withdrawal` · money out)
+
+```text
+Dear ALEX, Card CASH transaction dated 31-OCT-2026 17:47:25 of KES 40000  EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**pay a merchant by card** (`CoopBank` → `card_payment` · money out)
+
+```text
+Dear ALEX, Card PAYMENT transaction dated 27-OCT-2026 19:17:46 of KES 1790  SAMPLE MEDICAL>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**send money to a paybill** (`CoopBank` → `paybill_sent` · money out)
+
+```text
+Dear JANE DOE, you have sent Ksh. 60.0 to SAMPLE COMMUNITY CHURCH for 12345 on 10/25/2026 at 11:03:49. MPESA Ref. MPX00000002.
+```
+
+**balance enquiry is not a transaction** (`CoopBank` → review inbox)
+
+```text
+Dear ALEX, Card BAL ENQ transaction dated 28-OCT-2026 11:49:57 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
+```
+
+**statement request is not a transaction** (`CoopBank` → review inbox)
+
+```text
+Dear ALEX, Card STM REQ transaction dated 05-OCT-2026 18:30:26 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
 ```
 
 ## Equity Bank
@@ -136,7 +183,7 @@ Example alert: KES 2,500.00 received from JANE DOE on 26/10/2026 at 10:02. Ref E
 
 ## M-Pesa
 
-Pack `mpesa` 0.2.0 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
+Pack `mpesa` 0.3.1 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
 
 **send money to a person** (`MPESA` → `sent` · money out)
 
@@ -186,10 +233,28 @@ TJA0000006 confirmed.You bought Ksh100.00 of airtime on 26/10/26 at 7:00 PM.New 
 TJA0000007 Confirmed. Fuliza M-Pesa amount is Ksh 150.00. Access Fee charged Ksh 1.50. Total Fuliza M-Pesa outstanding amount is Ksh 151.50 due on 25/11/26. To check daily charges, Dial *000*0#OK Select Query Charges
 ```
 
+**Fuliza draw with daily charges in the total owed** (`MPESA` → `fuliza` · money in)
+
+```text
+TJA0000020 Confirmed. Fuliza M-PESA amount is Ksh 20.00. Access Fee charged Ksh 0.20. Total Fuliza M-PESA outstanding amount is Ksh168.50 due on 13/12/26. To check daily charges, Dial *000#OK Select Query Charges
+```
+
 **Fuliza repayment** (`MPESA` → `fuliza_repayment` · money out)
 
 ```text
 TJA0000008 Confirmed. Ksh 151.50 from your M-PESA has been used to fully pay your outstanding Fuliza M-PESA. Available Fuliza M-PESA limit is Ksh 2,000.00. M-PESA balance is Ksh8,753.00.
+```
+
+**Fuliza repayment, mixed case** (`MPESA` → `fuliza_repayment` · money out)
+
+```text
+TJA0000021 Confirmed. Ksh 101.00 from your M-Pesa has been used to fully pay your outstanding Fuliza M-Pesa. Available Fuliza M-Pesa limit is Ksh 2,000.00. M-Pesa balance is Ksh1,899.00.
+```
+
+**Fuliza partial repayment, outstanding amount** (`MPESA` → `fuliza_repayment` · money out)
+
+```text
+TJA0000022 Confirmed. Ksh 50.00 from your M-PESA has been used to partially pay your outstanding Fuliza M-PESA amount. Available Fuliza M-PESA limit is Ksh 1,050.00. M-PESA balance is Ksh0.00.
 ```
 
 **reversal of a send** (`MPESA` → `reversal` · money in)
