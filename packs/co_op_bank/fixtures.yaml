@@ -2,18 +2,21 @@
 # Synthetic fixtures only: invented names, references, merchants and numbers.
 pack: co_op_bank
 samples:
-  - name: receive money from M-Pesa
+  - name: money sent to M-Pesa is left to M-Pesa's own message
     sender: CoopBank
-    received_at: '2026-10-31T18:00:00+03:00'
     body: 'Dear JANE, You have received Kes 45000 on your M-pesa from SAMPLE COMMUNITY CHURCH.Bank Ref:CBK000000000001.Mpesa Ref:MPX00000001.'
+    expect: unmatched
+
+  - name: sender in capitals
+    sender: COOPBANK
+    body: 'Dear ALEX, Card PAYMENT transaction dated 28-OCT-2026 12:05:10 of KES 450  SAMPLE SHOP>NAIROBI KE Was Successful.Enquiries 0000000000.'
     expect:
-      rule: mobile_money_received
-      type: received
-      direction: in
-      amount_minor: 4500000
-      receipt: MPX00000001
-      counterparty: SAMPLE COMMUNITY CHURCH
-      time: '2026-10-31T18:00:00+03:00'
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 45000
+      counterparty: SAMPLE SHOP
+      time: '2026-10-28T12:05:10+03:00'
 
   - name: withdraw cash from a branch ATM
     sender: CoopBank
