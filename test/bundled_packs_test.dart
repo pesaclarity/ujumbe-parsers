@@ -39,7 +39,7 @@ void main() {
         'kcb',
         'loop',
         'mpesa',
-        'co_op_bank'
+        'co_op_bank',
       ]),
     );
     final packs = loadBundledPacks();

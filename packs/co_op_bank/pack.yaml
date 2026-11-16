@@ -3,11 +3,12 @@
 schema: 1
 id: co_op_bank
 name: Co-operative Bank
-version: 0.2.0
+version: 0.1.0
 currency: KES
 utc_offset: "+03:00"
 senders:
   - CoopBank
+  - Co-opBank
 time_format: "dd-MMM-yyyy HH:mm:ss"
 
 rules:

@@ -31,7 +31,7 @@ Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at
 
 ## Co-operative Bank
 
-Pack `co_op_bank` 0.2.0 · senders `CoopBank` · rules `mobile_money_received`, `card_withdrawal`, `card_payment`, `paybill_sent`
+Pack `co_op_bank` 0.1.0 · senders `CoopBank`, `Co-opBank` · rules `mobile_money_received`, `card_withdrawal`, `card_payment`, `paybill_sent`
 
 **receive money from M-Pesa** (`CoopBank` → `mobile_money_received` · money in)
 
