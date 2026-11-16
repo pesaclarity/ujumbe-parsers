@@ -144,6 +144,32 @@ samples:
       receipt: TJA0000008
       time: '2026-10-27T08:05:10+03:00'
 
+  - name: Fuliza repayment, mixed case
+    sender: MPESA
+    received_at: '2026-10-28T09:00:00+03:00'
+    body: 'TJA0000021 Confirmed. Ksh 101.00 from your M-Pesa has been used to fully pay your outstanding Fuliza M-Pesa. Available Fuliza M-Pesa limit is Ksh 2,000.00. M-Pesa balance is Ksh1,899.00.'
+    expect:
+      rule: fuliza_repayment
+      type: fuliza_repayment
+      direction: out
+      amount_minor: 10100
+      balance_minor: 189900
+      receipt: TJA0000021
+      time: '2026-10-28T09:00:00+03:00'
+
+  - name: Fuliza partial repayment, outstanding amount
+    sender: MPESA
+    received_at: '2026-10-29T07:30:00+03:00'
+    body: 'TJA0000022 Confirmed. Ksh 50.00 from your M-PESA has been used to partially pay your outstanding Fuliza M-PESA amount. Available Fuliza M-PESA limit is Ksh 1,050.00. M-PESA balance is Ksh0.00.'
+    expect:
+      rule: fuliza_repayment
+      type: fuliza_repayment
+      direction: out
+      amount_minor: 5000
+      balance_minor: 0
+      receipt: TJA0000022
+      time: '2026-10-29T07:30:00+03:00'
+
   - name: reversal of a send
     sender: MPESA
     body: 'TJA0000009 Confirmed. Reversal of transaction TJA0000001 has been successfully reversed  on 26/10/26 at 8:00 PM and Ksh1,500.00 is credited to your M-PESA account. New M-PESA account balance is Ksh4,056.00.'
