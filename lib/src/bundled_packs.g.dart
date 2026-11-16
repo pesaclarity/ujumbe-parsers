@@ -181,7 +181,7 @@ rules: []
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.3.0
+version: 0.3.1
 min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
@@ -235,7 +235,10 @@ rules:
   - id: fuliza_repayment
     type: fuliza_repayment
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
+    # Wording varies: "M-Pesa" in mixed case, and "outstanding Fuliza
+    # M-PESA amount" on partial repayments.
+    ignore_case: true
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh ?(?<amount>[\d,]+\.\d{2}) from your M-PESA has been used to (?:fully|partially) pay your outstanding Fuliza M-PESA(?: amount)?\..*?M-PESA balance is Ksh ?(?<balance>[\d,]+\.\d{2})\.'
 
   # "account" holds the receipt of the transaction being reversed. Money
   # comes back to the sender ("credited") or is taken back from the
