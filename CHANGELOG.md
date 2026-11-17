@@ -2,7 +2,7 @@
 
 All notable changes to this package are listed here. Versions follow [semantic versioning](https://semver.org); until 1.0 a minor version may break the pack format or the API.
 
-## [0.2.0](https://github.com/pesaclarity/ujumbe-parsers/compare/v0.1.0...v0.2.0) (2026-11-17)
+## [0.3.0](https://github.com/pesaclarity/ujumbe-parsers/compare/v0.1.0...v0.3.0) (2026-11-17)
 
 
 ### Features
