@@ -26,7 +26,7 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 
 - Synthetic data only. Never commit a real message, name, phone number, account number or receipt, even partly masked.
 - Every rule needs at least one sample, and a pack is accepted only when all its samples pass.
-- Bump the pack's `version` when its rules change, and run `dart run tool/bundle_packs.dart` so the packaged copy matches.
+- Bump the pack's `version` when its rules change, then run `dart run tool/bundle_packs.dart` so the packaged copy matches and `dart run tool/message_examples.dart` so [docs/MESSAGES.md](docs/MESSAGES.md) does (see "Regenerating generated files" in the [README](README.md#regenerating-generated-files)).
 
 ## Engine changes
 
