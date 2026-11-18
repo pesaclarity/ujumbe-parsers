@@ -4,12 +4,27 @@
 /// phone compares that against this value before using a downloaded pack.
 const engineVersion = '0.3.0'; // x-release-please-version
 
+// SemVer 2.0: no leading zeros in numbers or numeric pre-release
+// identifiers, and no empty identifiers.
 final _semver = RegExp(
-  r'^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$',
+  r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
+  r'(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)'
+  r'(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?'
+  r'(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
 );
 
-/// Whether [version] is a semantic version such as `1.2.3` or `1.2.3-beta.1`.
+/// Whether [version] is a semantic version (SemVer 2.0) such as `1.2.3` or
+/// `1.2.3-beta.1`. Leading zeros (`01.2.3`, `1.2.3-01`) and empty
+/// identifiers (`1.2.3-beta..1`) are not.
 bool isSemanticVersion(String version) => _semver.hasMatch(version);
+
+/// Whether this engine, at version [engine], can read something that needs
+/// [minEngine]. Follows SemVer precedence, so `1.0.0-beta` does not satisfy
+/// `1.0.0`, and build metadata is ignored.
+///
+/// Throws [FormatException] if either is not a semantic version.
+bool engineSatisfies(String minEngine, {String engine = engineVersion}) =>
+    compareVersions(minEngine, engine) <= 0;
 
 /// Compares two semantic versions by precedence: negative if [a] is older
 /// than [b], zero if equal, positive if newer. Build metadata is ignored.

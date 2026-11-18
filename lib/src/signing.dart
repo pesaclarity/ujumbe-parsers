@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cryptography/cryptography.dart';
 
 import 'pack.dart';
+import 'version.dart';
 
 /// Thrown when a pack's signature does not verify against any trusted key.
 class PackSignatureException implements Exception {
@@ -59,11 +60,15 @@ class PackVerifier {
   /// of a `.sig` file), then parses and validates the pack.
   ///
   /// Throws [PackSignatureException] before any parsing if the signature
-  /// does not verify, and [PackFormatException] if the pack is malformed.
+  /// does not verify, [PackEngineException] if the pack needs a newer engine
+  /// (a stored pack after the app was downgraded, say), and
+  /// [PackFormatException] if the pack is malformed. Rules gated on a newer
+  /// engine are left out and listed in [ParserPack.skippedRules].
   Future<ParserPack> loadVerified(
     List<int> packBytes,
     String signatureBase64, {
     String source = 'pack',
+    String engine = engineVersion,
   }) async {
     final List<int> signature;
     try {
@@ -76,7 +81,11 @@ class PackVerifier {
         '$source: signature does not match any trusted key',
       );
     }
-    return ParserPack.fromYaml(utf8.decode(packBytes), source: source);
+    return ParserPack.fromYaml(
+      utf8.decode(packBytes),
+      source: source,
+      engine: engine,
+    );
   }
 
   static List<int> _checkLength(List<int> key) {
