@@ -18,7 +18,8 @@ enum PackRejectionReason {
   /// The index is not valid JSON in the expected shape.
   indexMalformed,
 
-  /// The pack needs a newer engine than this one.
+  /// The pack needs a newer engine than this one, by its index entry or by
+  /// its own `min_engine`.
   engineTooOld,
 
   /// The pack is not newer than the copy already on the phone.
@@ -36,7 +37,8 @@ enum PackRejectionReason {
   /// The pack signature does not verify against any trusted key.
   signatureInvalid,
 
-  /// The pack verified but is malformed, or needs a newer engine.
+  /// The pack verified but is malformed, or uses a feature newer than its
+  /// `min_engine` says.
   packInvalid,
 
   /// The pack's id or version differs from its index entry.
@@ -418,7 +420,14 @@ class PackUpdateVerifier {
     }
     final ParserPack pack;
     try {
-      pack = ParserPack.fromYaml(utf8.decode(bytes), source: entry.file);
+      pack = ParserPack.fromYaml(
+        utf8.decode(bytes),
+        source: entry.file,
+        engine: _engine,
+      );
+    } on PackEngineException catch (e) {
+      // The index understated min_engine; the pack itself says it is too new.
+      return reject(PackRejectionReason.engineTooOld, e.problems.single);
     } on FormatException catch (e) {
       return reject(PackRejectionReason.packInvalid, e.message);
     } on PackFormatException catch (e) {

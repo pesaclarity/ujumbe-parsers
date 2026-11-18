@@ -27,7 +27,7 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
     "min_engine": {
-      "description": "Oldest engine version that can read this pack. Defaults to 0.1.0. Raise it when the pack relies on a newer engine feature.",
+      "description": "Oldest engine version (SemVer 2.0) that can read this pack. Defaults to 0.1.0. An engine older than this refuses the whole pack. It must be at least the version of every feature the pack uses: 0.2.0 for own_account, currency or an empty rules list, 0.3.0 for owed, due or due_format, 0.3.1 for min_engine on a rule; the engine rejects a pack that understates it.",
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
@@ -94,6 +94,11 @@
           "type": "object",
           "minProperties": 1,
           "additionalProperties": { "$ref": "#/$defs/direction" }
+        },
+        "min_engine": {
+          "description": "Oldest engine version (SemVer 2.0) that can read this rule. An older engine skips just this rule (reported in ParserPack.skippedRules) and reads the rest of the pack; its messages go to the review inbox. Needs the pack's own min_engine to be 0.3.1 or newer.",
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
         },
         "time_format": { "$ref": "#/$defs/timeFormat" },
         "due_format": { "$ref": "#/$defs/timeFormat" },

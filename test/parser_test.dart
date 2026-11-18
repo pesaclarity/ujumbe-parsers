@@ -97,6 +97,7 @@ schema: 1
 id: example_bank
 name: Example Bank
 version: 1.0.0
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders: [EXBANK]

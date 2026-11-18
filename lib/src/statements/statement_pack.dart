@@ -190,10 +190,20 @@ class StatementPack {
     this.passwordHint,
   });
 
-  /// Parses and validates a pack from its YAML text.
+  /// Parses and validates a pack from its YAML text, for an engine at
+  /// version [engine] (this engine's [engineVersion] unless a test says
+  /// otherwise).
   ///
-  /// Throws [PackFormatException] listing every problem found.
-  factory StatementPack.fromYaml(String yaml, {String source = 'pack'}) {
+  /// Throws [PackEngineException] if the pack's `min_engine` is newer than
+  /// [engine], otherwise [PackFormatException] listing every problem found.
+  factory StatementPack.fromYaml(
+    String yaml, {
+    String source = 'pack',
+    String engine = engineVersion,
+  }) {
+    if (!isSemanticVersion(engine)) {
+      throw ArgumentError.value(engine, 'engine', 'Not a semantic version');
+    }
     final problems = <String>[];
     final Object? doc;
     try {
@@ -205,6 +215,13 @@ class StatementPack {
       throw PackFormatException(source, ['Top level must be a mapping']);
     }
     final r = YamlFieldReader(doc, problems);
+    // Checked first: a pack for a newer engine may use fields this one does
+    // not know, and listing those would hide the real reason.
+    final minEngine =
+        r.version('min_engine', optional: true) ?? firstEngineVersion;
+    if (!engineSatisfies(minEngine, engine: engine)) {
+      throw PackEngineException(source, minEngine: minEngine, engine: engine);
+    }
     r.checkKeys(const {
       'schema',
       'id',
@@ -238,16 +255,7 @@ class StatementPack {
     final id = r.string('id', pattern: _idPattern);
     final institution = r.string('institution', pattern: _idPattern);
     final name = r.string('name');
-    final version = r.string('version', pattern: _semver);
-    final minEngine =
-        r.string('min_engine', pattern: _semver, optional: true) ??
-        firstEngineVersion;
-    if (_semver.hasMatch(minEngine) &&
-        compareVersions(minEngine, engineVersion) > 0) {
-      problems.add(
-        'min_engine: needs engine $minEngine, this engine is $engineVersion',
-      );
-    }
+    final version = r.version('version');
     final currency = r.string('currency', pattern: RegExp(r'^[A-Z]{3}$'));
     final offsetText = r.string('utc_offset');
     final utcOffset = offsetText == null ? null : parseUtcOffset(offsetText);
@@ -704,7 +712,4 @@ class StatementPack {
 
   static const _ruleGroups = {'counterparty', 'account'};
   static final _idPattern = RegExp(r'^[a-z][a-z0-9_]*$');
-  static final _semver = RegExp(
-    r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$',
-  );
 }

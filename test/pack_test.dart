@@ -85,7 +85,8 @@ void main() {
 
   test('a pack with no rules is review-only', () {
     final pack = ParserPack.fromYaml(
-      '${testPackYaml.substring(0, testPackYaml.indexOf('rules:'))}rules: []\n',
+      '${testPackYaml.substring(0, testPackYaml.indexOf('rules:'))}'
+      'min_engine: 0.2.0\nrules: []\n',
     );
     expect(pack.rules, isEmpty);
     final result = SmsParser([pack]).parse(

@@ -28,6 +28,32 @@ const allowedGroups = {
 /// The engine version assumed when a pack does not set `min_engine`.
 const firstEngineVersion = '0.1.0';
 
+/// The first engine version that reads `min_engine` on a rule. A pack that
+/// gates a rule this way needs at least this version as its own
+/// `min_engine`, because older engines refuse the field.
+///
+/// The field arrives in the first release after 0.3.0. Any version above
+/// 0.3.0 and no later than that release keeps 0.3.0 engines out, so this
+/// stays correct whether the release is 0.3.1 or 0.4.0.
+const ruleMinEngineSince = '0.3.1';
+
+/// Pack features newer than [firstEngineVersion], and the first engine
+/// version that reads each.
+///
+/// A pack using one must set `min_engine` (on the pack, or on the rule that
+/// uses it) to at least that version, so an older engine refuses the pack,
+/// or skips the rule, instead of failing on it. [ParserPack.fromYaml]
+/// rejects a pack that understates it.
+const featureMinEngine = <String, String>{
+  'an empty rules list (review-only pack)': '0.2.0',
+  'the own_account group': '0.2.0',
+  'the currency group': '0.2.0',
+  'the owed group': '0.3.0',
+  'the due group': '0.3.0',
+  'due_format': '0.3.0',
+  'min_engine on a rule': ruleMinEngineSince,
+};
+
 /// Which way money moved, from the account holder's point of view.
 enum Direction {
   /// Money came into the account.
@@ -113,6 +139,47 @@ class PackFormatException implements Exception {
       'PackFormatException($source):\n  - ${problems.join('\n  - ')}';
 }
 
+/// Thrown when a pack's `min_engine` is newer than the engine reading it.
+///
+/// It is a [PackFormatException], so code that catches that still refuses
+/// the pack; catch this one first to tell "update the app" apart from a
+/// broken pack. Nothing else in the pack is read, since it may use fields
+/// this engine does not know.
+class PackEngineException extends PackFormatException {
+  /// Creates an exception for [source], which needs [minEngine] while this
+  /// engine is [engine].
+  PackEngineException(
+    String source, {
+    required this.minEngine,
+    required this.engine,
+  }) : super(source, [
+         'min_engine: needs engine $minEngine, this engine is $engine',
+       ]);
+
+  /// The pack's `min_engine`.
+  final String minEngine;
+
+  /// The version of the engine that read it.
+  final String engine;
+}
+
+/// A rule left out of a pack because its own `min_engine` is newer than the
+/// engine reading the pack. Messages only it would read go to the review
+/// inbox; the rest of the pack works as usual.
+class SkippedRule {
+  /// Creates a record of rule [id], which needs [minEngine].
+  const SkippedRule(this.id, this.minEngine);
+
+  /// The rule's `id`, as written.
+  final String id;
+
+  /// The rule's `min_engine`.
+  final String minEngine;
+
+  @override
+  String toString() => 'SkippedRule($id, needs engine $minEngine)';
+}
+
 /// One regex rule for one message type.
 class PackRule {
   /// Creates a rule. Prefer [ParserPack.fromYaml], which validates.
@@ -161,12 +228,27 @@ class ParserPack {
     required this.senders,
     required this.rules,
     this.minEngineVersion = firstEngineVersion,
+    this.skippedRules = const [],
   });
 
-  /// Parses and validates a pack from its YAML text.
+  /// Parses and validates a pack from its YAML text, for an engine at
+  /// version [engine] (this engine's [engineVersion] unless a test says
+  /// otherwise).
   ///
-  /// Throws [PackFormatException] listing every problem found.
-  factory ParserPack.fromYaml(String yaml, {String source = 'pack'}) {
+  /// Throws [PackEngineException] if the pack's `min_engine` is newer than
+  /// [engine], and [PackFormatException] listing every problem found if the
+  /// pack is malformed, including when it uses a feature newer than its
+  /// `min_engine` says (see [featureMinEngine]). Rules whose own
+  /// `min_engine` is newer than [engine] are left out and listed in
+  /// [skippedRules].
+  factory ParserPack.fromYaml(
+    String yaml, {
+    String source = 'pack',
+    String engine = engineVersion,
+  }) {
+    if (!isSemanticVersion(engine)) {
+      throw ArgumentError.value(engine, 'engine', 'Not a semantic version');
+    }
     final problems = <String>[];
     final Object? doc;
     try {
@@ -178,6 +260,14 @@ class ParserPack {
       throw PackFormatException(source, ['Top level must be a mapping']);
     }
     final r = YamlFieldReader(doc, problems);
+
+    // Checked first: a pack for a newer engine may use fields this one does
+    // not know, and listing those would hide the real reason.
+    final minEngine =
+        r.version('min_engine', optional: true) ?? firstEngineVersion;
+    if (!engineSatisfies(minEngine, engine: engine)) {
+      throw PackEngineException(source, minEngine: minEngine, engine: engine);
+    }
 
     r.checkKeys(const {
       'schema',
@@ -200,16 +290,7 @@ class ParserPack {
     }
     final id = r.string('id', pattern: _idPattern);
     final name = r.string('name');
-    final version = r.string('version', pattern: _semver);
-    final minEngine =
-        r.string('min_engine', pattern: _semver, optional: true) ??
-        firstEngineVersion;
-    if (_semver.hasMatch(minEngine) &&
-        compareVersions(minEngine, engineVersion) > 0) {
-      problems.add(
-        'min_engine: needs engine $minEngine, this engine is $engineVersion',
-      );
-    }
+    final version = r.version('version');
     final currency = r.string('currency', pattern: RegExp(r'^[A-Z]{3}$'));
     final offsetText = r.string('utc_offset');
     final utcOffset = offsetText == null ? null : parseUtcOffset(offsetText);
@@ -220,17 +301,60 @@ class ParserPack {
     if (senders.isEmpty) problems.add('senders: at least one is required');
     final defaultFormat = r.timeFormat('time_format', optional: true);
 
+    // Reports a feature from [featureMinEngine] that needs a newer engine
+    // than [floor], the min_engine that applies where it is used.
+    void requireEngine(String at, String feature, String floor) {
+      final needs = featureMinEngine[feature]!;
+      if (compareVersions(needs, floor) > 0) {
+        problems.add(
+          '$at: $feature needs engine $needs, but min_engine is $floor; '
+          'set min_engine: $needs',
+        );
+      }
+    }
+
     final rules = <PackRule>[];
+    final skipped = <SkippedRule>[];
     final ruleNodes = doc['rules'];
     // An empty list is a review-only pack: its senders are read, and every
     // message goes to the review inbox until rules are written.
     if (ruleNodes is! YamlList) {
       problems.add('rules: a list is required');
     } else {
+      if (ruleNodes.isEmpty) {
+        requireEngine(
+          'rules',
+          'an empty rules list (review-only pack)',
+          minEngine,
+        );
+      }
       final seen = <String>{};
       for (var i = 0; i < ruleNodes.length; i++) {
-        final rule = _readRule(ruleNodes[i], 'rules[$i]', defaultFormat);
+        final node = ruleNodes[i];
+        final at = 'rules[$i]';
+        var floor = minEngine;
+        if (node is YamlMap && node.containsKey('min_engine')) {
+          requireEngine(at, 'min_engine on a rule', minEngine);
+          final ruleMin = YamlFieldReader(
+            node,
+            problems,
+            prefix: '$at.',
+          ).version('min_engine');
+          if (ruleMin != null && !engineSatisfies(ruleMin, engine: engine)) {
+            // Not read at all: it may use groups or fields this engine
+            // does not know.
+            skipped.add(SkippedRule('${node['id'] ?? at}', ruleMin));
+            continue;
+          }
+          if (ruleMin != null && compareVersions(ruleMin, floor) > 0) {
+            floor = ruleMin;
+          }
+        }
+        final rule = _readRule(node, at, defaultFormat);
         problems.addAll(rule.$2);
+        for (final feature in rule.$3) {
+          requireEngine(at, feature, floor);
+        }
         final value = rule.$1;
         if (value == null) continue;
         if (!seen.add(value.id)) {
@@ -250,6 +374,7 @@ class ParserPack {
       utcOffset: utcOffset!,
       senders: List.unmodifiable(senders),
       rules: List.unmodifiable(rules),
+      skippedRules: List.unmodifiable(skipped),
     );
   }
 
@@ -277,15 +402,22 @@ class ParserPack {
   /// Rules in match order; the first matching rule wins.
   final List<PackRule> rules;
 
-  static (PackRule?, List<String>) _readRule(
+  /// Rules left out because their own `min_engine` is newer than the engine
+  /// that read the pack. Empty for every pack this engine fully reads.
+  final List<SkippedRule> skippedRules;
+
+  /// Reads one rule. Returns the rule (or `null`), its problems, and the
+  /// [featureMinEngine] features it uses.
+  static (PackRule?, List<String>, Set<String>) _readRule(
     Object? node,
     String at,
     MessageTimeFormat? defaultFormat,
   ) {
     final problems = <String>[];
-    if (node is! YamlMap) return (null, ['$at: must be a mapping']);
+    if (node is! YamlMap) return (null, ['$at: must be a mapping'], const {});
     final r = YamlFieldReader(node, problems, prefix: '$at.');
     r.checkKeys(const {
+      'min_engine',
       'id',
       'type',
       'direction',
@@ -334,6 +466,12 @@ class ParserPack {
       problems.add('$at: captures "time" but no time_format is set');
     }
 
+    final features = {
+      for (final g in const ['own_account', 'currency', 'owed', 'due'])
+        if (groups.contains(g)) 'the $g group',
+      if (node.containsKey('due_format')) 'due_format',
+    };
+
     final directionText = r.string('direction', optional: true);
     final direction = directionText == null
         ? null
@@ -364,7 +502,7 @@ class ParserPack {
       );
     }
 
-    if (problems.isNotEmpty) return (null, problems);
+    if (problems.isNotEmpty) return (null, problems, features);
     return (
       PackRule(
         id: id!,
@@ -376,6 +514,7 @@ class ParserPack {
         directionValues: Map.unmodifiable(directionValues),
       ),
       problems,
+      features,
     );
   }
 
@@ -384,7 +523,4 @@ class ParserPack {
   ).allMatches(pattern).map((m) => m.group(1)!);
 
   static final _idPattern = RegExp(r'^[a-z][a-z0-9_]*$');
-  static final _semver = RegExp(
-    r'^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$',
-  );
 }
