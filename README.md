@@ -179,6 +179,26 @@ The tool refuses to sign a pack whose fixtures fail. Private keys stay outside t
 
 Releases are signed by a GitHub Actions workflow: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it (see "Engine versions" under [Adding an institution](#adding-an-institution)). See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
 
+## Regenerating generated files
+
+Two files are generated from `packs/` and committed, so the package works without file access and reviewers can read every sample. `tool/check` (and so the pre-push hook) runs both generators with `--check` and fails, naming the command, when either is out of date. Regenerate, then commit the result with the change that caused it:
+
+| Run | After you change | It rewrites |
+| --- | --- | --- |
+| `dart run tool/bundle_packs.dart` | any `packs/*/pack.yaml` or `packs/*/statement.yaml`, or add or remove a pack | `lib/src/bundled_packs.g.dart`, the byte-for-byte copy behind `loadBundledPack` and `loadBundledStatementPack` |
+| `dart run tool/message_examples.dart` | any `packs/*/fixtures.yaml`, or a pack's `name`, `version`, `senders` or rule ids | `docs/MESSAGES.md`, every sample message by pack |
+
+Both validate every pack first and write nothing if one is invalid. Engine changes under `lib/` need neither, unless they change how packs are read or what the pages show; if so, `tool/check --fast` tells you. Never edit either file by hand.
+
+## Contributing
+
+1. Branch from `dev`, which is where all work lands; `main` holds only released code.
+2. Make each commit a [Conventional Commits](https://www.conventionalcommits.org) title (`feat: add Equity Bank pack`, `fix(engine): …`, `feat!: …` for a breaking change). Pull requests into `dev` are rebase-merged, so every commit lands as written and release-please reads each one for the next version and the changelog. Tidy history before review; no `fixup!` or `squash!` commits.
+3. Run `tool/setup-hooks` once; every push then checks the titles and runs `tool/check`.
+4. Open the pull request against `dev`.
+
+Maintainers then promote `dev` to `main` through a pull request merged with a merge commit, release-please on `main` tags `vX.Y.Z`, and the tag signs and publishes the packs. See [docs/RELEASING.md](docs/RELEASING.md) for that flow and [CONTRIBUTING.md](CONTRIBUTING.md) for the rest of the ground rules.
+
 ## Testing
 
 ```sh
