@@ -15,7 +15,7 @@ All samples are synthetic: fake names, masked fake numbers and made-up receipts,
 
 ## Airtel Money
 
-Pack `airtel_money` 0.1.0 · senders `AirtelMoney` · rules none yet (review-only)
+Pack `airtel_money` 0.1.1 · senders `AirtelMoney` · rules none yet (review-only)
 
 **a send goes to the review inbox** (`AirtelMoney` → review inbox)
 
@@ -167,7 +167,7 @@ Dear Customer, your account balance is KES 19,500.50 as at 27/10/2026 10:00.
 
 ## Loop
 
-Pack `loop` 0.1.0 · senders `NCBALOOP`, `NCBA_LOOP` · rules none yet (review-only)
+Pack `loop` 0.1.1 · senders `NCBALOOP`, `NCBA_LOOP` · rules none yet (review-only)
 
 **a payment alert goes to the review inbox** (`NCBALOOP` → review inbox)
 
