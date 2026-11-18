@@ -15,7 +15,8 @@ const bundledPackSources = <String, String>{
 schema: 1
 id: airtel_money
 name: Airtel Money
-version: 0.1.0
+version: 0.1.1
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -165,7 +166,8 @@ rules:
 schema: 1
 id: loop
 name: Loop
-version: 0.1.0
+version: 0.1.1
+min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
