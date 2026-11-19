@@ -170,7 +170,7 @@ void main() {
         minEngine: '99.0.0',
         indexMinEngine: '0.1.0',
       );
-      expect(reasons(await check(r)), [PackRejectionReason.packInvalid]);
+      expect(reasons(await check(r)), [PackRejectionReason.engineTooOld]);
     },
   );
 

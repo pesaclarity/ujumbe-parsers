@@ -91,7 +91,7 @@ lib/
   src/fixtures.dart      runs a pack's samples; a pack is valid only if all pass
   src/signing.dart       Ed25519 pack signing and verification
   src/pack_updates.dart  signed pack index and over-the-air update checks
-  src/version.dart       engine version and semantic version comparison
+  src/version.dart       engine version and SemVer 2.0 comparison
   src/money.dart         amounts to integer minor units
   src/time_format.dart   locale-free date patterns for message times
 packs/<institution>/
@@ -133,7 +133,18 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `owed` | A debt's total still owed after this message, such as Fuliza's outstanding amount |
    | `due` | When that debt is due, a date read with the rule's `due_format` |
 
-   Rules are tried in order and the first match wins, so put specific shapes before general ones. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. A pack that uses `own_account` or `currency` needs `min_engine: 0.2.0`, and one that uses `owed` or `due` needs `min_engine: 0.3.0`. If a message prints no time, the engine uses the time the phone received it.
+   Rules are tried in order and the first match wins, so put specific shapes before general ones. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. If a message prints no time, the engine uses the time the phone received it. Then set `min_engine` if the pack uses a newer feature (see Engine versions below).
+
+   **Engine versions.** `min_engine` (a [SemVer 2.0](https://semver.org) version, default `0.1.0`) names the oldest engine that can read the pack. An older engine refuses the whole pack with a `PackEngineException` (over the air: a `PackRejection` with reason `engineTooOld`), so the phone keeps its current copy instead of reading the pack half-way. Pre-releases count as older than their release: `0.4.0-beta.1` does not meet `min_engine: 0.4.0`. The engine also refuses a pack whose `min_engine` is lower than a feature it uses needs, so set at least:
+
+   | Feature | `min_engine` |
+   | --- | --- |
+   | `own_account` or `currency` group, or `rules: []` (review-only) | `0.2.0` |
+   | `owed` or `due` group, or `due_format` | `0.3.0` |
+   | `min_engine` on a rule | `0.3.1` (the first release after 0.3.0) |
+
+   To add a rule for a newer engine without cutting older phones off the rest of the pack, give that rule its own `min_engine`. An older engine skips just that rule, lists it in `ParserPack.skippedRules`, and sends its messages to the review inbox; it reads the rest of the pack as usual.
+
 3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
 4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, `dart run tool/message_examples.dart` to list its samples in [docs/MESSAGES.md](docs/MESSAGES.md), then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.
@@ -166,7 +177,27 @@ dart run tool/sign_pack.dart --key-file /secure/place/ujumbe.seed packs/mpesa
 
 The tool refuses to sign a pack whose fixtures fail. Private keys stay outside the repo, in a hardware key or secrets manager; tests generate throwaway keys.
 
-Releases are signed by a GitHub Actions workflow: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it. See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
+Releases are signed by a GitHub Actions workflow: pushing a `v*` tag runs `tool/build_release.dart` to sign each pack and write a signed `index.json` listing them, then uploads them to the GitHub release for phones to download. A pack that needs a newer engine sets `min_engine: x.y.z` in `pack.yaml`, and older apps skip it (see "Engine versions" under [Adding an institution](#adding-an-institution)). See [docs/RELEASING.md](docs/RELEASING.md) for the steps, key custody, rotation and where the app pins its keys.
+
+## Regenerating generated files
+
+Two files are generated from `packs/` and committed, so the package works without file access and reviewers can read every sample. `tool/check` (and so the pre-push hook) runs both generators with `--check` and fails, naming the command, when either is out of date. Regenerate, then commit the result with the change that caused it:
+
+| Run | After you change | It rewrites |
+| --- | --- | --- |
+| `dart run tool/bundle_packs.dart` | any `packs/*/pack.yaml` or `packs/*/statement.yaml`, or add or remove a pack | `lib/src/bundled_packs.g.dart`, the byte-for-byte copy behind `loadBundledPack` and `loadBundledStatementPack` |
+| `dart run tool/message_examples.dart` | any `packs/*/fixtures.yaml`, or a pack's `name`, `version`, `senders` or rule ids | `docs/MESSAGES.md`, every sample message by pack |
+
+Both validate every pack first and write nothing if one is invalid. Engine changes under `lib/` need neither, unless they change how packs are read or what the pages show; if so, `tool/check --fast` tells you. Never edit either file by hand.
+
+## Contributing
+
+1. Branch from `dev`, which is where all work lands; `main` holds only released code.
+2. Make each commit a [Conventional Commits](https://www.conventionalcommits.org) title (`feat: add Equity Bank pack`, `fix(engine): …`, `feat!: …` for a breaking change). Pull requests into `dev` are rebase-merged, so every commit lands as written and release-please reads each one for the next version and the changelog. Tidy history before review; no `fixup!` or `squash!` commits.
+3. Run `tool/setup-hooks` once; every push then checks the titles and runs `tool/check`.
+4. Open the pull request against `dev`.
+
+Maintainers then promote `dev` to `main` through a pull request merged with a merge commit, release-please on `main` tags `vX.Y.Z`, and the tag signs and publishes the packs. See [docs/RELEASING.md](docs/RELEASING.md) for that flow and [CONTRIBUTING.md](CONTRIBUTING.md) for the rest of the ground rules.
 
 ## Testing
 

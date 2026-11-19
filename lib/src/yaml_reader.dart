@@ -1,6 +1,7 @@
 import 'package:yaml/yaml.dart';
 
 import 'time_format.dart';
+import 'version.dart';
 
 /// Reads typed fields from a YAML mapping, collecting every problem found
 /// instead of stopping at the first. Shared by the pack formats; not part
@@ -38,6 +39,17 @@ class YamlFieldReader {
     }
     if (pattern != null && !pattern.hasMatch(value)) {
       problems.add('$prefix$key: "$value" does not match ${pattern.pattern}');
+      return null;
+    }
+    return value;
+  }
+
+  /// A semantic version (SemVer 2.0) such as `0.3.0` or `1.0.0-beta.1`.
+  String? version(String key, {bool optional = false}) {
+    final value = string(key, optional: optional);
+    if (value == null) return null;
+    if (!isSemanticVersion(value)) {
+      problems.add('$prefix$key: "$value" is not a semantic version (x.y.z)');
       return null;
     }
     return value;

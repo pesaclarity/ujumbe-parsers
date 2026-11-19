@@ -3,8 +3,9 @@
 # Skip in an emergency: git push --no-verify
 #
 # Commit titles follow Conventional Commits, because release-please reads
-# them (and pull request titles, kept by squash merges) for the next version
-# and the changelog.
+# them for the next version and the changelog. Pull requests are
+# rebase-merged, so every pushed commit lands on dev as is: fixup!, squash!
+# and amend! commits are rejected, since pushed history is never rewritten.
 pattern='^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert|style)(\([a-z0-9-]+\))?!?: [^ ].*$'
 zero=0000000000000000000000000000000000000000
 
@@ -21,6 +22,16 @@ while read -r _ local_sha _ remote_sha; do
   # shellcheck disable=SC2086 # $range is several arguments
   titles=$(git log --no-merges --format='%h %s' $range) || exit 1
   [ -n "$titles" ] || continue
+  fixups=$(printf '%s\n' "$titles" | while read -r sha title; do
+    case "$title" in "fixup! "*|"squash! "*|"amend! "*) echo "  $sha $title" ;; esac
+  done)
+  if [ -n "$fixups" ]; then
+    echo "These fixup commits would land on dev as is (pull requests are rebase-merged):" >&2
+    echo "$fixups" >&2
+    echo "Write a Conventional Commit instead, e.g. 'refactor: name the sender rules' or 'test: cover the Airtel footer'." >&2
+    bad=1
+  fi
+  # git revert's own titles ("Revert \"...\"") are fine: release-please reads them.
   wrong=$(printf '%s\n' "$titles" | while read -r sha title; do
     case "$title" in "Revert "*|"fixup! "*|"squash! "*|"amend! "*) continue ;; esac
     printf '%s\n' "$title" | grep -Eq "$pattern" || echo "  $sha $title"

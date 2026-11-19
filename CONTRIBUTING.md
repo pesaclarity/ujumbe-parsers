@@ -26,7 +26,7 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 
 - Synthetic data only. Never commit a real message, name, phone number, account number or receipt, even partly masked.
 - Every rule needs at least one sample, and a pack is accepted only when all its samples pass.
-- Bump the pack's `version` when its rules change, and run `dart run tool/bundle_packs.dart` so the packaged copy matches.
+- Bump the pack's `version` when its rules change, then run `dart run tool/bundle_packs.dart` so the packaged copy matches and `dart run tool/message_examples.dart` so [docs/MESSAGES.md](docs/MESSAGES.md) does (see "Regenerating generated files" in the [README](README.md#regenerating-generated-files)).
 
 ## Engine changes
 
@@ -37,8 +37,9 @@ Adding or fixing an institution's pack is the most useful contribution. Follow "
 ## Commits and pull requests
 
 - Small, focused pull requests against `dev`, with a short description of what changed and why. `main` takes only `dev` and release pull requests (see [docs/RELEASING.md](docs/RELEASING.md)).
-- Pull request titles follow [Conventional Commits](https://www.conventionalcommits.org): `feat: add Equity Bank pack`, `fix: …`, `feat!: …` for a breaking change. They set the next version and the changelog.
-- Commit messages: one short line in the same Conventional Commits form, e.g. `feat: add Equity Bank pack` (the pre-push hook checks it).
+- Every commit follows [Conventional Commits](https://www.conventionalcommits.org): `feat: add Equity Bank pack`, `fix: …`, `feat!: …` for a breaking change. Pull requests into `dev` are rebase-merged, so each commit lands on `dev` as is and the commits set the next version and the changelog (the pre-push hook checks each title).
+- Changes users can see are `feat` or `fix`. Review follow-ups they don't see use a hidden type (`refactor`, `test`, `style`, `chore`, `docs`, `ci`, `build`) so the changelog stays clean. Write them as new commits: pushed history is never rewritten, and the hook rejects `fixup!`, `squash!` and `amend!` commits.
+- One logical change per commit, one short title line.
 - New dependencies need a reason in the pull request; the engine must stay free of Flutter.
 
 ## Releases
