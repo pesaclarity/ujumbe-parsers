@@ -153,6 +153,12 @@ Ksh 12000.00 sent to KCB Pay Bill 522522 for account 123***7890 JANE AKINYI DOE 
 KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987****654 on 2026-11-07 03:15:20 PM via KCB.
 ```
 
+**declined card payment is not a transaction** (`KCB` → review inbox)
+
+```text
+USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use
+```
+
 **account debited** (`KCB` → `account_alert` · money out)
 
 ```text
