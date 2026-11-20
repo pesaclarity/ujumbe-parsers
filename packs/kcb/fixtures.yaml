@@ -21,12 +21,37 @@ samples:
     sender: KCB
     body: 'Dear Customer, your acc 1234567890 has been credited KES 12,000.00 Mobi at KCB DATA PROCESSING CENTRE at 19:45:10 on 05 NOV 2026. For any queries call KCB on  +254700000000'
     expect:
-      rule: mobi_credit
+      rule: account_movement
       type: bank
       direction: in
       amount_minor: 1200000
+      counterparty: Mobi
       own_account: '1234567890'
       time: '2026-11-05T19:45:10+03:00'
+
+  - name: account debited for an outgoing PesaLink
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been debited KES 8,000.00 Pesalink Outgoing at KCB DATA PROCESSING CENTRE at 10:12:30 on 06 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: account_movement
+      type: bank
+      direction: out
+      amount_minor: 800000
+      counterparty: Pesalink Outgoing
+      own_account: '1234567890'
+      time: '2026-11-06T10:12:30+03:00'
+
+  - name: a direct credit, such as a salary or EFT
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been credited KES 8,940.00 Direct Credits at KCB DATA PROCESSING CENTRE at 10:08:05 on 06 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: account_movement
+      type: bank
+      direction: in
+      amount_minor: 894000
+      counterparty: Direct Credits
+      own_account: '1234567890'
+      time: '2026-11-06T10:08:05+03:00'
 
   - name: M-Pesa paid to KCB paybill, confirmed by KCB
     sender: KCB
@@ -55,6 +80,21 @@ samples:
       counterparty: MARY WAMBUI DOE
       account: 987****654
       time: '2026-11-07T15:15:20+03:00'
+
+  - name: send to another bank over PesaLink
+    sender: KCB
+    body: '0001000720261106101500abcd1234 Completed. Your SEND TO PESALINK request of KES 8,000.00 from 123****890 to 555****321 - JANE AKINYI DOE at 2026-11-06 10:15:00 AM has been processed successfully. Transaction cost KES 15.00  Incl. Tax Amount KES 2.00. Pata extra cash with a flexible Mobile Loan of up to KES 100K. Dial *000# or use the KCB App.'
+    expect:
+      rule: pesalink_sent
+      type: bank
+      direction: out
+      amount_minor: 800000
+      fee_minor: 1500
+      receipt: 0001000720261106101500abcd1234
+      counterparty: JANE AKINYI DOE
+      account: 555****321
+      own_account: 123****890
+      time: '2026-11-06T10:15:00+03:00'
 
   # A declined card payment moved no money: it must never become a
   # transaction, and its "Balance" is not read as the account's.

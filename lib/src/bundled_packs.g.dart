@@ -145,13 +145,18 @@ rules:
     due_format: dd/MM/yyyy
     pattern: '^Dear [^,]+, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) was debited from your KCB account to repay your (?<counterparty>KCB .+?) (?<account>\d+)\. The loan has been partially paid\. Your loan balance is [A-Z]{3} ?(?<owed>[\d,]+\.\d{2}), next instalment is due on (?<due>\d{2}/\d{2}/\d{4})\.'
 
-  # Money in through KCB's mobile channel ("Mobi"), such as from M-Pesa
-  # paybill 522522. The account number is printed in full.
-  - id: mobi_credit
+  # A debit or credit on the account through a channel KCB names ("Mobi",
+  # "Pesalink Outgoing", "Direct Credits", ...), kept as "counterparty" since
+  # the message names no other party. The account number is printed in full.
+  # It can be the twin of a richer message about the same money (a PesaLink
+  # completion, say): the app keeps one transaction for both.
+  - id: account_movement
     type: bank
-    direction: in
+    direction_values:
+      debited: out
+      credited: in
     time_format: "HH:mm:ss 'on' dd MMM yyyy"
-    pattern: '^Dear Customer, your acc (?<own_account>[\d*]+) has been credited (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) Mobi at KCB DATA PROCESSING CENTRE at (?<time>\d{2}:\d{2}:\d{2} on \d{2} [A-Za-z]{3} \d{4})\.'
+    pattern: '^Dear Customer, your acc (?<own_account>[\d*]+) has been (?<direction>credited|debited) (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) (?<counterparty>.+?) at .+? at (?<time>\d{2}:\d{2}:\d{2} on \d{2} [A-Za-z]{3} \d{4})\.'
 
   # KCB's confirmation of an M-Pesa payment to its paybill. The money left
   # the M-Pesa wallet, so the rule names M-Pesa's account; KCB's own credit
@@ -174,6 +179,16 @@ rules:
     institution: mpesa
     time_format: "yyyy-MM-dd hh:mm:ss a"
     pattern: '^(?<receipt>[A-Z0-9]{16}) Confirmed\.\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) received from (?<counterparty>.+?) - (?<account>[\d*]+) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M) via KCB\.'
+
+  # Sent over PesaLink to an account at another bank, often the person's
+  # own. "account" is the receiving account as printed, "counterparty" its
+  # holder, and "fee" the transaction cost, which already includes the tax
+  # printed after it. The receipt is KCB's long reference.
+  - id: pesalink_sent
+    type: bank
+    direction: out
+    time_format: "yyyy-MM-dd hh:mm:ss a"
+    pattern: '^(?<receipt>[A-Za-z0-9]{20,40}) Completed\. Your SEND TO PESALINK request of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) from (?<own_account>[\d*]+) to (?<account>[\d*]+) - (?<counterparty>.+?) at (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M) has been processed successfully\. Transaction cost [A-Z]{3} ?(?<fee>[\d,]+\.\d{2})'
 
   - id: account_alert
     type: bank
