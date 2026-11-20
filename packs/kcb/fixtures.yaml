@@ -56,6 +56,13 @@ samples:
       account: 987****654
       time: '2026-11-07T15:15:20+03:00'
 
+  # A declined card payment moved no money: it must never become a
+  # transaction, and its "Balance" is not read as the account's.
+  - name: declined card payment is not a transaction
+    sender: KCB
+    body: 'USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use'
+    expect: unmatched
+
   - name: account debited
     sender: KCB
     body: 'Dear Customer, KES 3,000.00 has been debited from your account ****0001 on 26/10/2026 at 15:20. Transaction Ref: KCB0000000001. Your available balance is KES 7,000.00.'

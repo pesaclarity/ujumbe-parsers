@@ -132,6 +132,9 @@ senders:
   - KCB
 time_format: "dd/MM/yyyy 'at' HH:mm"
 
+# No rule reads declined card payments ("... has been declined. Reason -
+# Insufficient funds.Balance KES..."): no money moved, so they stay with the
+# review inbox and their balance is never taken as the account's.
 rules:
   # A loan repaid from the KCB account. "account" is the loan's number,
   # "counterparty" the loan as printed, "owed" the balance left and "due"
