@@ -71,6 +71,19 @@ rules:
     time_format: "yyyy-MM-dd hh:mm:ss a"
     pattern: '^(?<receipt>[A-Za-z0-9]{20,40}) Completed\. Your SEND TO PESALINK request of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) from (?<own_account>[\d*]+) to (?<account>[\d*]+) - (?<counterparty>.+?) at (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M) has been processed successfully\. Transaction cost [A-Z]{3} ?(?<fee>[\d,]+\.\d{2})'
 
+  # A card payment that went through. The merchant is whatever follows
+  # "at" (a name, a domain or a phone number). The time is 24-hour with a
+  # stray "pm". The available balance is not read: it is in the account's
+  # currency, while the amount is often in another (USD), and a message
+  # carries one currency. The card number is not read as the account
+  # either, so the payment lands on the KCB account, not a separate card.
+  # A declined payment starts the same way but has no ", Avail balance".
+  - id: card_payment
+    type: bank
+    direction: out
+    time_format: "dd/MM/yyyy HH:mm"
+    pattern: '^(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) transaction made on KCB card [\d*]+ at (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} \d{2}:\d{2})(?:[AaPp][Mm])?, Avail balance '
+
   - id: account_alert
     type: bank
     direction_values:

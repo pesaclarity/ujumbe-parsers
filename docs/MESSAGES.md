@@ -127,7 +127,7 @@ Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 0
 
 ## KCB
 
-Pack `kcb` 0.4.0 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `account_alert`, `wallet_transfer`, `account_named`
+Pack `kcb` 0.4.0 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named`
 
 **repay a salary advance from the KCB account** (`KCB` → `loan_repayment` · money out)
 
@@ -169,6 +169,18 @@ KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987***
 
 ```text
 0001000720261106101500abcd1234 Completed. Your SEND TO PESALINK request of KES 8,000.00 from 123****890 to 555****321 - JANE AKINYI DOE at 2026-11-06 10:15:00 AM has been processed successfully. Transaction cost KES 15.00  Incl. Tax Amount KES 2.00. Pata extra cash with a flexible Mobile Loan of up to KES 100K. Dial *000# or use the KCB App.
+```
+
+**card payment in another currency** (`KCB` → `card_payment` · money out)
+
+```text
+USD 42.50 transaction made on KCB card 4111***0007 at example-store.co on 22/10/2026 21:05pm, Avail balance KES 2,310.40 Enquiries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use the KCB App to check limit.
+```
+
+**card payment to a merchant shown as a phone number** (`KCB` → `card_payment` · money out)
+
+```text
+USD 9.99 transaction made on KCB card 4111***0007 at +10000000000 on 23/10/2026 08:30am, Avail balance KES 1,000.00 Enquiries call +254700000000.
 ```
 
 **declined card payment is not a transaction** (`KCB` → review inbox)
