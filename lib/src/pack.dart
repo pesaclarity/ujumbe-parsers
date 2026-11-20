@@ -52,6 +52,8 @@ const featureMinEngine = <String, String>{
   'the due group': '0.3.0',
   'due_format': '0.3.0',
   'min_engine on a rule': ruleMinEngineSince,
+  'the loan_repayment type': '0.4.0',
+  'institution on a rule': '0.4.0',
 };
 
 /// Which way money moved, from the account holder's point of view.
@@ -101,6 +103,11 @@ enum TransactionType {
 
   /// An overdraft repayment.
   fulizaRepayment('fuliza_repayment'),
+
+  /// A repayment of a loan, such as a bank's salary advance. `account` is
+  /// the loan's number, `counterparty` the loan as printed, and `owed` and
+  /// `due` what is left and when the next instalment is due.
+  loanRepayment('loan_repayment'),
 
   /// A reversal of an earlier transaction.
   reversal('reversal'),
@@ -191,6 +198,7 @@ class PackRule {
     this.dueFormat,
     this.direction,
     this.directionValues = const {},
+    this.institution,
   });
 
   /// Unique within its pack, e.g. `sent`.
@@ -214,6 +222,11 @@ class PackRule {
   /// Maps the captured `direction` text (lower-cased) to a direction, for
   /// messages such as bank alerts that say "debited" or "credited".
   final Map<String, Direction> directionValues;
+
+  /// The pack id of the institution whose account the money moved on, when
+  /// it is not this pack's own: KCB's confirmation of an M-Pesa payment to
+  /// its paybill is `mpesa`. Null for the pack's own accounts.
+  final String? institution;
 }
 
 /// A validated parser pack for one institution.
@@ -357,6 +370,12 @@ class ParserPack {
         }
         final value = rule.$1;
         if (value == null) continue;
+        if (value.institution != null && value.institution == id) {
+          problems.add(
+            '$at.institution: "$id" is this pack; leave it out for the '
+            "pack's own accounts",
+          );
+        }
         if (!seen.add(value.id)) {
           problems.add('rules[$i].id: duplicate rule id "${value.id}"');
         }
@@ -425,6 +444,7 @@ class ParserPack {
       'time_format',
       'due_format',
       'ignore_case',
+      'institution',
       'pattern',
     });
     final id = r.string('id', pattern: _idPattern);
@@ -440,6 +460,11 @@ class ParserPack {
       dateOnly: true,
     );
     final ignoreCase = r.boolean('ignore_case') ?? false;
+    final institution = r.string(
+      'institution',
+      optional: true,
+      pattern: _idPattern,
+    );
 
     final patternText = r.string('pattern');
     RegExp? pattern;
@@ -470,6 +495,8 @@ class ParserPack {
       for (final g in const ['own_account', 'currency', 'owed', 'due'])
         if (groups.contains(g)) 'the $g group',
       if (node.containsKey('due_format')) 'due_format',
+      if (type == TransactionType.loanRepayment) 'the loan_repayment type',
+      if (node.containsKey('institution')) 'institution on a rule',
     };
 
     final directionText = r.string('direction', optional: true);
@@ -512,6 +539,7 @@ class ParserPack {
         dueFormat: groups.contains('due') ? dueFormat : null,
         direction: direction,
         directionValues: Map.unmodifiable(directionValues),
+        institution: institution,
       ),
       problems,
       features,

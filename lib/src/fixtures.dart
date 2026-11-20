@@ -110,6 +110,7 @@ class FixtureSample {
     'time',
     'owed_minor',
     'due',
+    'institution',
   ];
 
   /// Lists how [result] differs from what this sample expects, for a pack
@@ -140,6 +141,7 @@ class FixtureSample {
       'time': result.time,
       'owed_minor': result.owedMinor,
       'due': result.due,
+      'institution': result.institution,
     };
     final problems = <String>[];
     for (final field in fields) {

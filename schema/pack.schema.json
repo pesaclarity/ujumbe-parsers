@@ -27,7 +27,7 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
     "min_engine": {
-      "description": "Oldest engine version (SemVer 2.0) that can read this pack. Defaults to 0.1.0. An engine older than this refuses the whole pack. It must be at least the version of every feature the pack uses: 0.2.0 for own_account, currency or an empty rules list, 0.3.0 for owed, due or due_format, 0.3.1 for min_engine on a rule; the engine rejects a pack that understates it.",
+      "description": "Oldest engine version (SemVer 2.0) that can read this pack. Defaults to 0.1.0. An engine older than this refuses the whole pack. It must be at least the version of every feature the pack uses: 0.2.0 for own_account, currency or an empty rules list, 0.3.0 for owed, due or due_format, 0.3.1 for min_engine on a rule, 0.4.0 for the loan_repayment type or institution on a rule; the engine rejects a pack that understates it.",
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
@@ -81,6 +81,7 @@
             "airtime",
             "fuliza",
             "fuliza_repayment",
+            "loan_repayment",
             "reversal",
             "bank"
           ]
@@ -103,6 +104,11 @@
         "time_format": { "$ref": "#/$defs/timeFormat" },
         "due_format": { "$ref": "#/$defs/timeFormat" },
         "ignore_case": { "type": "boolean", "default": false },
+        "institution": {
+          "description": "The pack id of the institution whose account the money moved on, when it is not this pack's own: a bank's confirmation of an M-Pesa payment to its paybill is mpesa. Needs min_engine 0.4.0.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
         "pattern": {
           "description": "Dart regular expression. Named groups allowed: receipt, amount (required), direction, counterparty, account, own_account (the holder's own account number), currency (the code printed with the amount; else the pack's), balance, fee, time, owed (total still owed, e.g. Fuliza) and due (when it is due, read with due_format).",
           "type": "string",
