@@ -96,6 +96,30 @@ samples:
       own_account: 123****890
       time: '2026-11-06T10:15:00+03:00'
 
+  - name: card payment in another currency
+    sender: KCB
+    body: 'USD 42.50 transaction made on KCB card 4111***0007 at example-store.co on 22/10/2026 21:05pm, Avail balance KES 2,310.40 Enquiries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use the KCB App to check limit.'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 4250
+      currency: USD
+      counterparty: example-store.co
+      time: '2026-10-22T21:05:00+03:00'
+
+  - name: card payment to a merchant shown as a phone number
+    sender: KCB
+    body: 'USD 9.99 transaction made on KCB card 4111***0007 at +10000000000 on 23/10/2026 08:30am, Avail balance KES 1,000.00 Enquiries call +254700000000.'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 999
+      currency: USD
+      counterparty: '+10000000000'
+      time: '2026-10-23T08:30:00+03:00'
+
   # A declined card payment moved no money: it must never become a
   # transaction, and its "Balance" is not read as the account's.
   - name: declined card payment is not a transaction
