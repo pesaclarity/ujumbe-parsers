@@ -1,11 +1,12 @@
 # yaml-language-server: $schema=../../schema/pack.schema.json
-# Minimal starter pack. The message shape is illustrative and must be
-# checked against real alerts (then rewritten as synthetic samples).
+# The first rules' shapes are illustrative and must be checked against real
+# alerts. The loan, Mobi and M-Pesa rules follow real KCB messages, rewritten
+# as synthetic samples in fixtures.yaml.
 schema: 1
 id: kcb
 name: KCB
-version: 0.3.0
-min_engine: 0.2.0
+version: 0.4.0
+min_engine: 0.4.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -13,6 +14,45 @@ senders:
 time_format: "dd/MM/yyyy 'at' HH:mm"
 
 rules:
+  # A loan repaid from the KCB account. "account" is the loan's number,
+  # "counterparty" the loan as printed, "owed" the balance left and "due"
+  # when the next instalment is due. No time is printed.
+  - id: loan_repayment
+    type: loan_repayment
+    direction: out
+    due_format: dd/MM/yyyy
+    pattern: '^Dear [^,]+, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) was debited from your KCB account to repay your (?<counterparty>KCB .+?) (?<account>\d+)\. The loan has been partially paid\. Your loan balance is [A-Z]{3} ?(?<owed>[\d,]+\.\d{2}), next instalment is due on (?<due>\d{2}/\d{2}/\d{4})\.'
+
+  # Money in through KCB's mobile channel ("Mobi"), such as from M-Pesa
+  # paybill 522522. The account number is printed in full.
+  - id: mobi_credit
+    type: bank
+    direction: in
+    time_format: "HH:mm:ss 'on' dd MMM yyyy"
+    pattern: '^Dear Customer, your acc (?<own_account>[\d*]+) has been credited (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) Mobi at KCB DATA PROCESSING CENTRE at (?<time>\d{2}:\d{2}:\d{2} on \d{2} [A-Za-z]{3} \d{4})\.'
+
+  # KCB's confirmation of an M-Pesa payment to its paybill. The money left
+  # the M-Pesa wallet, so the rule names M-Pesa's account; KCB's own credit
+  # alert records the other side. "account" is the KCB account paid into, as
+  # printed (masked), and "receipt" the M-Pesa reference, which M-Pesa's own
+  # message for the same payment also prints.
+  - id: mpesa_paybill
+    type: paybill
+    direction: out
+    institution: mpesa
+    time_format: "dd/MM/yyyy 'at' hh:mm a"
+    pattern: '^Ksh ?(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>KCB) Pay Bill \d+ for account (?<account>[\d*]+) .+? has been received on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2} [AP]M)\. M-PESA ref (?<receipt>[A-Z0-9]{10})\.'
+
+  # Money from someone's KCB account into this M-Pesa wallet: the mirror of
+  # wallet_transfer. It lands on M-Pesa, not on a KCB account. "account" is
+  # the sender's masked KCB account, "counterparty" their name.
+  - id: mpesa_received
+    type: received
+    direction: in
+    institution: mpesa
+    time_format: "yyyy-MM-dd hh:mm:ss a"
+    pattern: '^(?<receipt>[A-Z0-9]{16}) Confirmed\.\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) received from (?<counterparty>.+?) - (?<account>[\d*]+) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M) via KCB\.'
+
   - id: account_alert
     type: bank
     direction_values:

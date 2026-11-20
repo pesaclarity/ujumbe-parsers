@@ -2,6 +2,60 @@
 # Synthetic messages only.
 pack: kcb
 samples:
+  - name: repay a salary advance from the KCB account
+    sender: KCB
+    received_at: '2026-11-05T19:40:00+03:00'
+    body: 'Dear JANE AKINYI DOE, KES 12000.00 was debited from your KCB account to repay your KCB Salary Advance 100000001. The loan has been partially paid. Your loan balance is KES 48500.25, next instalment is due on 15/12/2026. Pay the loan to borrow again.'
+    expect:
+      rule: loan_repayment
+      type: loan_repayment
+      direction: out
+      amount_minor: 1200000
+      counterparty: KCB Salary Advance
+      account: '100000001'
+      owed_minor: 4850025
+      due: '2026-12-15T00:00:00+03:00'
+      time: '2026-11-05T19:40:00+03:00'
+
+  - name: money in through KCB Mobi, such as from M-Pesa paybill
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been credited KES 12,000.00 Mobi at KCB DATA PROCESSING CENTRE at 19:45:10 on 05 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: mobi_credit
+      type: bank
+      direction: in
+      amount_minor: 1200000
+      own_account: '1234567890'
+      time: '2026-11-05T19:45:10+03:00'
+
+  - name: M-Pesa paid to KCB paybill, confirmed by KCB
+    sender: KCB
+    body: 'Ksh 12000.00 sent to KCB Pay Bill 522522 for account 123***7890 JANE AKINYI DOE has been received on 05/11/2026 at 07:45 PM. M-PESA ref TJA0000020. To reverse this transaction, SMS this message to 16120'
+    expect:
+      rule: mpesa_paybill
+      type: paybill
+      direction: out
+      institution: mpesa
+      amount_minor: 1200000
+      receipt: TJA0000020
+      counterparty: KCB
+      account: 123***7890
+      time: '2026-11-05T19:45:00+03:00'
+
+  - name: money from someone's KCB account into M-Pesa
+    sender: KCB
+    body: 'KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987****654 on 2026-11-07 03:15:20 PM via KCB.'
+    expect:
+      rule: mpesa_received
+      type: received
+      direction: in
+      institution: mpesa
+      amount_minor: 250000
+      receipt: KCB0000000000021
+      counterparty: MARY WAMBUI DOE
+      account: 987****654
+      time: '2026-11-07T15:15:20+03:00'
+
   - name: account debited
     sender: KCB
     body: 'Dear Customer, KES 3,000.00 has been debited from your account ****0001 on 26/10/2026 at 15:20. Transaction Ref: KCB0000000001. Your available balance is KES 7,000.00.'

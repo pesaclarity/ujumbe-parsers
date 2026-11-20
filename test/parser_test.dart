@@ -38,6 +38,20 @@ void main() {
     expect(t.account, isNull);
     expect(t.time, DateTime.utc(2026, 10, 26, 6, 15));
     expect(t.timeFromMessage, isTrue);
+    expect(t.institution, isNull);
+    expect(t.accountInstitution, 'example_wallet');
+  });
+
+  test("names the other institution a rule's money moved on", () {
+    final other = ParserPack.fromYaml(
+      testPackYaml
+          .replaceFirst('currency:', 'min_engine: 0.4.0\ncurrency:')
+          .replaceFirst('type: sent', 'type: sent\n    institution: mpesa'),
+    );
+    final t = SmsParser([other]).parse(sms(testSentBody)) as ParsedTransaction;
+    expect(t.packId, 'example_wallet');
+    expect(t.institution, 'mpesa');
+    expect(t.accountInstitution, 'mpesa');
   });
 
   test('collapses runs of spaces in the counterparty', () {

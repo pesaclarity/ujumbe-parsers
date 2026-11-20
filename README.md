@@ -117,7 +117,7 @@ test/                    engine unit tests and a test over every pack
 New banks, SACCOs and wallets are the main way to contribute. Every pack is gated by its own samples.
 
 1. **Create the directory.** `packs/<id>/` where `<id>` is lower case with underscores, e.g. `co_op_bank` or `airtel_money`. The pack's `id` must match.
-2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency` (for messages that print none), `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
+2. **Write `pack.yaml`.** Copy `packs/kcb/pack.yaml` as a start. Set `senders` to the exact sender IDs the institution uses, `currency` (for messages that print none), `utc_offset` and a `time_format`. If no real wording is known yet, `rules: []` makes a review-only pack: its senders are read and every message goes to the review inbox. Otherwise add one rule per message type (`sent`, `received`, `paybill`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `loan_repayment`, `reversal`, or `bank` for plain debit and credit alerts). Each rule's `pattern` is a regex using these named groups only:
 
    | Group | Meaning |
    | --- | --- |
@@ -133,7 +133,7 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `owed` | A debt's total still owed after this message, such as Fuliza's outstanding amount |
    | `due` | When that debt is due, a date read with the rule's `due_format` |
 
-   Rules are tried in order and the first match wins, so put specific shapes before general ones. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. If a message prints no time, the engine uses the time the phone received it. Then set `min_engine` if the pack uses a newer feature (see Engine versions below).
+   Rules are tried in order and the first match wins, so put specific shapes before general ones. When a message describes money moving on another institution's account, such as a bank's confirmation of an M-Pesa payment into it, set `institution` on the rule to that institution's pack id (`institution: mpesa`); the app then records it on that account, and the bank's own alert records the other side. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. If a message prints no time, the engine uses the time the phone received it. Then set `min_engine` if the pack uses a newer feature (see Engine versions below).
 
    **Engine versions.** `min_engine` (a [SemVer 2.0](https://semver.org) version, default `0.1.0`) names the oldest engine that can read the pack. An older engine refuses the whole pack with a `PackEngineException` (over the air: a `PackRejection` with reason `engineTooOld`), so the phone keeps its current copy instead of reading the pack half-way. Pre-releases count as older than their release: `0.4.0-beta.1` does not meet `min_engine: 0.4.0`. The engine also refuses a pack whose `min_engine` is lower than a feature it uses needs, so set at least:
 
@@ -142,6 +142,7 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `own_account` or `currency` group, or `rules: []` (review-only) | `0.2.0` |
    | `owed` or `due` group, or `due_format` | `0.3.0` |
    | `min_engine` on a rule | `0.3.1` (the first release after 0.3.0) |
+   | `loan_repayment` type, or `institution` on a rule | `0.4.0` |
 
    To add a rule for a newer engine without cutting older phones off the rest of the pack, give that rule its own `min_engine`. An older engine skips just that rule, lists it in `ParserPack.skippedRules`, and sends its messages to the review inbox; it reads the rest of the pack as usual.
 

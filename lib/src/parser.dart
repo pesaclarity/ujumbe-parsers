@@ -83,6 +83,7 @@ final class ParsedTransaction extends ParseResult {
     this.ownAccount,
     this.owedMinor,
     this.due,
+    this.institution,
   });
 
   /// The pack and version that produced this result.
@@ -145,6 +146,15 @@ final class ParsedTransaction extends ParseResult {
 
   /// When [owedMinor] is due, as the start of that day in the pack's offset.
   final DateTime? due;
+
+  /// The pack id of the institution whose account the money moved on, when
+  /// it is not [packId]'s own: a bank's confirmation of an M-Pesa payment
+  /// is `mpesa`. Null for the pack's own accounts.
+  final String? institution;
+
+  /// The institution whose account this moved money on: [institution], or
+  /// else [packId].
+  String get accountInstitution => institution ?? packId;
 
   /// Key for matching this SMS against later statement imports: receipt,
   /// amount and time to the minute (statements rarely carry seconds).
@@ -312,6 +322,7 @@ class SmsParser {
       ownAccount: group('own_account'),
       owedMinor: owed,
       due: due,
+      institution: rule.institution,
     );
   }
 }

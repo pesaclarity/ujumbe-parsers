@@ -127,7 +127,31 @@ Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 0
 
 ## KCB
 
-Pack `kcb` 0.3.0 · senders `KCB` · rules `account_alert`, `wallet_transfer`, `account_named`
+Pack `kcb` 0.4.0 · senders `KCB` · rules `loan_repayment`, `mobi_credit`, `mpesa_paybill`, `mpesa_received`, `account_alert`, `wallet_transfer`, `account_named`
+
+**repay a salary advance from the KCB account** (`KCB` → `loan_repayment` · money out)
+
+```text
+Dear JANE AKINYI DOE, KES 12000.00 was debited from your KCB account to repay your KCB Salary Advance 100000001. The loan has been partially paid. Your loan balance is KES 48500.25, next instalment is due on 15/12/2026. Pay the loan to borrow again.
+```
+
+**money in through KCB Mobi, such as from M-Pesa paybill** (`KCB` → `mobi_credit` · money in)
+
+```text
+Dear Customer, your acc 1234567890 has been credited KES 12,000.00 Mobi at KCB DATA PROCESSING CENTRE at 19:45:10 on 05 NOV 2026. For any queries call KCB on  +254700000000
+```
+
+**M-Pesa paid to KCB paybill, confirmed by KCB** (`KCB` → `mpesa_paybill` · money out)
+
+```text
+Ksh 12000.00 sent to KCB Pay Bill 522522 for account 123***7890 JANE AKINYI DOE has been received on 05/11/2026 at 07:45 PM. M-PESA ref TJA0000020. To reverse this transaction, SMS this message to 16120
+```
+
+**money from someone's KCB account into M-Pesa** (`KCB` → `mpesa_received` · money in)
+
+```text
+KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987****654 on 2026-11-07 03:15:20 PM via KCB.
+```
 
 **account debited** (`KCB` → `account_alert` · money out)
 
