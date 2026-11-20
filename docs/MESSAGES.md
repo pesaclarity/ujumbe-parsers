@@ -127,7 +127,67 @@ Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 0
 
 ## KCB
 
-Pack `kcb` 0.3.0 · senders `KCB` · rules `account_alert`, `wallet_transfer`, `account_named`
+Pack `kcb` 0.4.0 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named`
+
+**repay a salary advance from the KCB account** (`KCB` → `loan_repayment` · money out)
+
+```text
+Dear JANE AKINYI DOE, KES 12000.00 was debited from your KCB account to repay your KCB Salary Advance 100000001. The loan has been partially paid. Your loan balance is KES 48500.25, next instalment is due on 15/12/2026. Pay the loan to borrow again.
+```
+
+**money in through KCB Mobi, such as from M-Pesa paybill** (`KCB` → `account_movement` · money in)
+
+```text
+Dear Customer, your acc 1234567890 has been credited KES 12,000.00 Mobi at KCB DATA PROCESSING CENTRE at 19:45:10 on 05 NOV 2026. For any queries call KCB on  +254700000000
+```
+
+**account debited for an outgoing PesaLink** (`KCB` → `account_movement` · money out)
+
+```text
+Dear Customer, your acc 1234567890 has been debited KES 8,000.00 Pesalink Outgoing at KCB DATA PROCESSING CENTRE at 10:12:30 on 06 NOV 2026. For any queries call KCB on  +254700000000
+```
+
+**a direct credit, such as a salary or EFT** (`KCB` → `account_movement` · money in)
+
+```text
+Dear Customer, your acc 1234567890 has been credited KES 8,940.00 Direct Credits at KCB DATA PROCESSING CENTRE at 10:08:05 on 06 NOV 2026. For any queries call KCB on  +254700000000
+```
+
+**M-Pesa paid to KCB paybill, confirmed by KCB** (`KCB` → `mpesa_paybill` · money out)
+
+```text
+Ksh 12000.00 sent to KCB Pay Bill 522522 for account 123***7890 JANE AKINYI DOE has been received on 05/11/2026 at 07:45 PM. M-PESA ref TJA0000020. To reverse this transaction, SMS this message to 16120
+```
+
+**money from someone's KCB account into M-Pesa** (`KCB` → `mpesa_received` · money in)
+
+```text
+KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987****654 on 2026-11-07 03:15:20 PM via KCB.
+```
+
+**send to another bank over PesaLink** (`KCB` → `pesalink_sent` · money out)
+
+```text
+0001000720261106101500abcd1234 Completed. Your SEND TO PESALINK request of KES 8,000.00 from 123****890 to 555****321 - JANE AKINYI DOE at 2026-11-06 10:15:00 AM has been processed successfully. Transaction cost KES 15.00  Incl. Tax Amount KES 2.00. Pata extra cash with a flexible Mobile Loan of up to KES 100K. Dial *000# or use the KCB App.
+```
+
+**card payment in another currency** (`KCB` → `card_payment` · money out)
+
+```text
+USD 42.50 transaction made on KCB card 4111***0007 at example-store.co on 22/10/2026 21:05pm, Avail balance KES 2,310.40 Enquiries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use the KCB App to check limit.
+```
+
+**card payment to a merchant shown as a phone number** (`KCB` → `card_payment` · money out)
+
+```text
+USD 9.99 transaction made on KCB card 4111***0007 at +10000000000 on 23/10/2026 08:30am, Avail balance KES 1,000.00 Enquiries call +254700000000.
+```
+
+**declined card payment is not a transaction** (`KCB` → review inbox)
+
+```text
+USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use
+```
 
 **account debited** (`KCB` → `account_alert` · money out)
 

@@ -263,6 +263,35 @@ row_starts_with: date
       expect(_problems(_withMinEngine('0.2.0', yaml)), isEmpty);
     });
 
+    test('a loan repayment and a rule for another institution need 0.4.0', () {
+      final yaml = _owedPack('0.3.0')
+          .replaceFirst('type: fuliza', 'type: loan_repayment')
+          .replaceFirst(
+            'type: bank',
+            'type: bank\n    institution: other_wallet',
+          );
+      expect(_problems(yaml), [
+        'rules[0]: institution on a rule needs engine 0.4.0, but min_engine '
+            'is 0.3.0; set min_engine: 0.4.0',
+        'rules[1]: the loan_repayment type needs engine 0.4.0, but '
+            'min_engine is 0.3.0; set min_engine: 0.4.0',
+      ]);
+      expect(
+        _problems(yaml.replaceFirst('min_engine: 0.3.0', 'min_engine: 0.4.0')),
+        isEmpty,
+      );
+    });
+
+    test('a rule cannot name its own pack as the institution', () {
+      final yaml = _owedPack('0.4.0').replaceFirst(
+        'type: bank',
+        'type: bank\n    institution: example_wallet',
+      );
+      expect(_problems(yaml), [
+        contains('rules[0].institution: "example_wallet" is this pack'),
+      ]);
+    });
+
     test('a review-only pack needs min_engine 0.2.0', () {
       final empty =
           '${testPackYaml.substring(0, testPackYaml.indexOf('rules:'))}'

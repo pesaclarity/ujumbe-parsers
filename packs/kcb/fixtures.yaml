@@ -2,6 +2,131 @@
 # Synthetic messages only.
 pack: kcb
 samples:
+  - name: repay a salary advance from the KCB account
+    sender: KCB
+    received_at: '2026-11-05T19:40:00+03:00'
+    body: 'Dear JANE AKINYI DOE, KES 12000.00 was debited from your KCB account to repay your KCB Salary Advance 100000001. The loan has been partially paid. Your loan balance is KES 48500.25, next instalment is due on 15/12/2026. Pay the loan to borrow again.'
+    expect:
+      rule: loan_repayment
+      type: loan_repayment
+      direction: out
+      amount_minor: 1200000
+      counterparty: KCB Salary Advance
+      account: '100000001'
+      owed_minor: 4850025
+      due: '2026-12-15T00:00:00+03:00'
+      time: '2026-11-05T19:40:00+03:00'
+
+  - name: money in through KCB Mobi, such as from M-Pesa paybill
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been credited KES 12,000.00 Mobi at KCB DATA PROCESSING CENTRE at 19:45:10 on 05 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: account_movement
+      type: bank
+      direction: in
+      amount_minor: 1200000
+      counterparty: Mobi
+      own_account: '1234567890'
+      time: '2026-11-05T19:45:10+03:00'
+
+  - name: account debited for an outgoing PesaLink
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been debited KES 8,000.00 Pesalink Outgoing at KCB DATA PROCESSING CENTRE at 10:12:30 on 06 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: account_movement
+      type: bank
+      direction: out
+      amount_minor: 800000
+      counterparty: Pesalink Outgoing
+      own_account: '1234567890'
+      time: '2026-11-06T10:12:30+03:00'
+
+  - name: a direct credit, such as a salary or EFT
+    sender: KCB
+    body: 'Dear Customer, your acc 1234567890 has been credited KES 8,940.00 Direct Credits at KCB DATA PROCESSING CENTRE at 10:08:05 on 06 NOV 2026. For any queries call KCB on  +254700000000'
+    expect:
+      rule: account_movement
+      type: bank
+      direction: in
+      amount_minor: 894000
+      counterparty: Direct Credits
+      own_account: '1234567890'
+      time: '2026-11-06T10:08:05+03:00'
+
+  - name: M-Pesa paid to KCB paybill, confirmed by KCB
+    sender: KCB
+    body: 'Ksh 12000.00 sent to KCB Pay Bill 522522 for account 123***7890 JANE AKINYI DOE has been received on 05/11/2026 at 07:45 PM. M-PESA ref TJA0000020. To reverse this transaction, SMS this message to 16120'
+    expect:
+      rule: mpesa_paybill
+      type: paybill
+      direction: out
+      institution: mpesa
+      amount_minor: 1200000
+      receipt: TJA0000020
+      counterparty: KCB
+      account: 123***7890
+      time: '2026-11-05T19:45:00+03:00'
+
+  - name: money from someone's KCB account into M-Pesa
+    sender: KCB
+    body: 'KCB0000000000021 Confirmed.  KES 2,500.00 received from MARY WAMBUI DOE - 987****654 on 2026-11-07 03:15:20 PM via KCB.'
+    expect:
+      rule: mpesa_received
+      type: received
+      direction: in
+      institution: mpesa
+      amount_minor: 250000
+      receipt: KCB0000000000021
+      counterparty: MARY WAMBUI DOE
+      account: 987****654
+      time: '2026-11-07T15:15:20+03:00'
+
+  - name: send to another bank over PesaLink
+    sender: KCB
+    body: '0001000720261106101500abcd1234 Completed. Your SEND TO PESALINK request of KES 8,000.00 from 123****890 to 555****321 - JANE AKINYI DOE at 2026-11-06 10:15:00 AM has been processed successfully. Transaction cost KES 15.00  Incl. Tax Amount KES 2.00. Pata extra cash with a flexible Mobile Loan of up to KES 100K. Dial *000# or use the KCB App.'
+    expect:
+      rule: pesalink_sent
+      type: bank
+      direction: out
+      amount_minor: 800000
+      fee_minor: 1500
+      receipt: 0001000720261106101500abcd1234
+      counterparty: JANE AKINYI DOE
+      account: 555****321
+      own_account: 123****890
+      time: '2026-11-06T10:15:00+03:00'
+
+  - name: card payment in another currency
+    sender: KCB
+    body: 'USD 42.50 transaction made on KCB card 4111***0007 at example-store.co on 22/10/2026 21:05pm, Avail balance KES 2,310.40 Enquiries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use the KCB App to check limit.'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 4250
+      currency: USD
+      counterparty: example-store.co
+      time: '2026-10-22T21:05:00+03:00'
+
+  - name: card payment to a merchant shown as a phone number
+    sender: KCB
+    body: 'USD 9.99 transaction made on KCB card 4111***0007 at +10000000000 on 23/10/2026 08:30am, Avail balance KES 1,000.00 Enquiries call +254700000000.'
+    expect:
+      rule: card_payment
+      type: bank
+      direction: out
+      amount_minor: 999
+      currency: USD
+      counterparty: '+10000000000'
+      time: '2026-10-23T08:30:00+03:00'
+
+  # A declined card payment moved no money: it must never become a
+  # transaction, and its "Balance" is not read as the account's.
+  - name: declined card payment is not a transaction
+    sender: KCB
+    body: 'USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use'
+    expect: unmatched
+
   - name: account debited
     sender: KCB
     body: 'Dear Customer, KES 3,000.00 has been debited from your account ****0001 on 26/10/2026 at 15:20. Transaction Ref: KCB0000000001. Your available balance is KES 7,000.00.'
