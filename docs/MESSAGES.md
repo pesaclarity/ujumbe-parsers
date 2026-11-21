@@ -2,7 +2,7 @@
 
 Every sample message the packs are tested with, generated from `packs/*/fixtures.yaml` by `tool/message_examples.dart`. Do not edit; regenerate with `dart run tool/message_examples.dart`.
 
-All samples are synthetic: fake names, masked fake numbers and made-up receipts, written in the shape of real alerts. "Review inbox" means no rule reads the message, so the person checks it once.
+All samples are synthetic: fake names, masked fake numbers and made-up receipts, written in the shape of real alerts. "Review inbox" means no rule reads the message, so the person checks it once; "dropped" means a notice in the pack knows it is not a transaction, so the app drops it without asking.
 
 - [Airtel Money](#airtel-money)
 - [Co-operative Bank](#co-operative-bank)
@@ -31,7 +31,7 @@ Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at
 
 ## Co-operative Bank
 
-Pack `co_op_bank` 0.1.1 · senders `CoopBank` · rules `card_withdrawal`, `card_payment`, `paybill_sent`
+Pack `co_op_bank` 0.2.0 · senders `CoopBank` · rules `card_withdrawal`, `card_payment`, `paybill_sent` · notices `card_enquiry`
 
 **money sent to M-Pesa is left to M-Pesa's own message** (`CoopBank` → review inbox)
 
@@ -63,13 +63,13 @@ Dear ALEX, Card PAYMENT transaction dated 27-OCT-2026 19:17:46 of KES 1790  SAMP
 Dear JANE DOE, you have sent Ksh. 60.0 to SAMPLE COMMUNITY CHURCH for 12345 on 10/25/2026 at 11:03:49. MPESA Ref. MPX00000002.
 ```
 
-**balance enquiry is not a transaction** (`CoopBank` → review inbox)
+**balance enquiry is not a transaction** (`CoopBank` → notice `card_enquiry` · dropped)
 
 ```text
 Dear ALEX, Card BAL ENQ transaction dated 28-OCT-2026 11:49:57 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
 ```
 
-**statement request is not a transaction** (`CoopBank` → review inbox)
+**statement request is not a transaction** (`CoopBank` → notice `card_enquiry` · dropped)
 
 ```text
 Dear ALEX, Card STM REQ transaction dated 05-OCT-2026 18:30:26 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.
@@ -127,7 +127,7 @@ Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 0
 
 ## KCB
 
-Pack `kcb` 0.4.0 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named`
+Pack `kcb` 0.4.1 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named` · notices `declined_card_payment`
 
 **repay a salary advance from the KCB account** (`KCB` → `loan_repayment` · money out)
 
@@ -183,10 +183,16 @@ USD 42.50 transaction made on KCB card 4111***0007 at example-store.co on 22/10/
 USD 9.99 transaction made on KCB card 4111***0007 at +10000000000 on 23/10/2026 08:30am, Avail balance KES 1,000.00 Enquiries call +254700000000.
 ```
 
-**declined card payment is not a transaction** (`KCB` → review inbox)
+**declined card payment is not a transaction** (`KCB` → notice `declined_card_payment` · dropped)
 
 ```text
 USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use
+```
+
+**declined card payment in shillings, morning time** (`KCB` → notice `declined_card_payment` · dropped)
+
+```text
+KES 1,250.00 transaction made on KCB card 4111***0007 at EXAMPLE GROCERS on 02/11/2026 09:05am has been declined. Reason - Insufficient funds.Balance KES 120.00. Queries call +254711087000.
 ```
 
 **account debited** (`KCB` → `account_alert` · money out)

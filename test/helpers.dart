@@ -23,3 +23,15 @@ rules:
 const testSentBody =
     'EX0001 sent Ksh1,500.00 to JANE DOE on 26/10/2026 09:15. '
     'Fee Ksh15.00. Bal Ksh3,250.00.';
+
+/// [testPackYaml] with two notices, for engine 0.4.0. Synthetic wording.
+final testNoticePackYaml =
+    '${testPackYaml.replaceFirst('currency:', 'min_engine: 0.4.0\ncurrency:')}'
+    r'''
+notices:
+  - id: declined
+    pattern: '^Ksh[\d,]+\.\d{2} payment to .+ was declined\.'
+  - id: pin_changed
+    ignore_case: true
+    pattern: '^Your PIN was changed\.$'
+''';

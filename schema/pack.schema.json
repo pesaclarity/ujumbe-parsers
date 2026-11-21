@@ -27,7 +27,7 @@
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
     "min_engine": {
-      "description": "Oldest engine version (SemVer 2.0) that can read this pack. Defaults to 0.1.0. An engine older than this refuses the whole pack. It must be at least the version of every feature the pack uses: 0.2.0 for own_account, currency or an empty rules list, 0.3.0 for owed, due or due_format, 0.3.1 for min_engine on a rule, 0.4.0 for the loan_repayment type or institution on a rule; the engine rejects a pack that understates it.",
+      "description": "Oldest engine version (SemVer 2.0) that can read this pack. Defaults to 0.1.0. An engine older than this refuses the whole pack. It must be at least the version of every feature the pack uses: 0.2.0 for own_account, currency or an empty rules list, 0.3.0 for owed, due or due_format, 0.3.1 for min_engine on a rule, 0.4.0 for the loan_repayment type, institution on a rule or notices; the engine rejects a pack that understates it.",
       "type": "string",
       "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
     },
@@ -52,6 +52,11 @@
       "description": "Tried in order; the first match wins. Empty for a review-only pack, whose messages all go to the review inbox.",
       "type": "array",
       "items": { "$ref": "#/$defs/rule" }
+    },
+    "notices": {
+      "description": "Messages from these senders known not to be transactions, such as a declined card payment. Tried in order, only when no rule matched; a match parses as a KnownNotice, which the app drops without storing it or asking the person. Needs min_engine 0.4.0.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/notice" }
     }
   },
   "$defs": {
@@ -61,6 +66,24 @@
       "minLength": 1
     },
     "direction": { "enum": ["in", "out"] },
+    "notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "pattern"],
+      "properties": {
+        "id": {
+          "description": "Unique among the pack's notices; reported as KnownNotice.noticeId.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "ignore_case": { "type": "boolean", "default": false },
+        "pattern": {
+          "description": "Dart regular expression matched against the whole body. A notice reads no fields, so it has no named groups; anchor it with ^ and keep it narrow, since a match is dropped without review.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "rule": {
       "type": "object",
       "additionalProperties": false,

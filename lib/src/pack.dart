@@ -54,6 +54,7 @@ const featureMinEngine = <String, String>{
   'min_engine on a rule': ruleMinEngineSince,
   'the loan_repayment type': '0.4.0',
   'institution on a rule': '0.4.0',
+  'notices': '0.4.0',
 };
 
 /// Which way money moved, from the account holder's point of view.
@@ -229,6 +230,21 @@ class PackRule {
   final String? institution;
 }
 
+/// A message shape an institution sends that is known not to be a
+/// transaction, such as KCB's notice of a declined card payment. A message
+/// it matches parses as a [KnownNotice]: the app drops it without storing it
+/// or asking the person, instead of holding it for the review inbox.
+class PackNotice {
+  /// Creates a notice. Prefer [ParserPack.fromYaml], which validates.
+  const PackNotice({required this.id, required this.pattern});
+
+  /// Unique among its pack's notices, e.g. `declined_card_payment`.
+  final String id;
+
+  /// The compiled pattern. It captures no named groups: nothing is read.
+  final RegExp pattern;
+}
+
 /// A validated parser pack for one institution.
 class ParserPack {
   /// Creates a pack. Prefer [ParserPack.fromYaml], which validates.
@@ -240,6 +256,7 @@ class ParserPack {
     required this.utcOffset,
     required this.senders,
     required this.rules,
+    this.notices = const [],
     this.minEngineVersion = firstEngineVersion,
     this.skippedRules = const [],
   });
@@ -293,6 +310,7 @@ class ParserPack {
       'senders',
       'time_format',
       'rules',
+      'notices',
     });
     final schema = r.integer('schema');
     if (schema != null && schema != supportedPackSchema) {
@@ -383,6 +401,25 @@ class ParserPack {
       }
     }
 
+    final notices = <PackNotice>[];
+    final noticeNodes = doc['notices'];
+    if (doc.containsKey('notices')) {
+      requireEngine('notices', 'notices', minEngine);
+      if (noticeNodes is! YamlList) {
+        problems.add('notices: must be a list');
+      } else {
+        final seen = <String>{};
+        for (var i = 0; i < noticeNodes.length; i++) {
+          final notice = _readNotice(noticeNodes[i], 'notices[$i]', problems);
+          if (notice == null) continue;
+          if (!seen.add(notice.id)) {
+            problems.add('notices[$i].id: duplicate notice id "${notice.id}"');
+          }
+          notices.add(notice);
+        }
+      }
+    }
+
     if (problems.isNotEmpty) throw PackFormatException(source, problems);
     return ParserPack(
       id: id!,
@@ -393,6 +430,7 @@ class ParserPack {
       utcOffset: utcOffset!,
       senders: List.unmodifiable(senders),
       rules: List.unmodifiable(rules),
+      notices: List.unmodifiable(notices),
       skippedRules: List.unmodifiable(skipped),
     );
   }
@@ -420,6 +458,10 @@ class ParserPack {
 
   /// Rules in match order; the first matching rule wins.
   final List<PackRule> rules;
+
+  /// Messages known not to be transactions, tried in order after every rule
+  /// has failed to match, so a notice never hides a transaction.
+  final List<PackNotice> notices;
 
   /// Rules left out because their own `min_engine` is newer than the engine
   /// that read the pack. Empty for every pack this engine fully reads.
@@ -544,6 +586,40 @@ class ParserPack {
       problems,
       features,
     );
+  }
+
+  /// Reads one notice, adding its problems to [problems].
+  static PackNotice? _readNotice(
+    Object? node,
+    String at,
+    List<String> problems,
+  ) {
+    if (node is! YamlMap) {
+      problems.add('$at: must be a mapping');
+      return null;
+    }
+    final start = problems.length;
+    final r = YamlFieldReader(node, problems, prefix: '$at.');
+    r.checkKeys(const {'id', 'ignore_case', 'pattern'});
+    final id = r.string('id', pattern: _idPattern);
+    final ignoreCase = r.boolean('ignore_case') ?? false;
+    final patternText = r.string('pattern');
+    RegExp? pattern;
+    if (patternText != null) {
+      try {
+        pattern = RegExp(patternText, caseSensitive: !ignoreCase);
+      } on FormatException catch (e) {
+        problems.add('$at.pattern: does not compile: ${e.message}');
+      }
+      for (final g in _namedGroups(patternText).toSet()) {
+        problems.add(
+          '$at.pattern: a notice reads no fields; make group "$g" '
+          'unnamed with (?:...)',
+        );
+      }
+    }
+    if (problems.length > start) return null;
+    return PackNotice(id: id!, pattern: pattern!);
   }
 
   static Iterable<String> _namedGroups(String pattern) => RegExp(

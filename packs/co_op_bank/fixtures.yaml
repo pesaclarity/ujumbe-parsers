@@ -56,9 +56,11 @@ samples:
   - name: balance enquiry is not a transaction
     sender: CoopBank
     body: 'Dear ALEX, Card BAL ENQ transaction dated 28-OCT-2026 11:49:57 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.'
-    expect: unmatched
+    expect:
+      notice: card_enquiry
 
   - name: statement request is not a transaction
     sender: CoopBank
     body: 'Dear ALEX, Card STM REQ transaction dated 05-OCT-2026 18:30:26 of KES 0 EXAMPLEBRANCH001>NAIROBI KE Was Successful.Enquiries 0000000000.'
-    expect: unmatched
+    expect:
+      notice: card_enquiry
