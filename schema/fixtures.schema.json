@@ -31,6 +31,15 @@
             "oneOf": [
               { "const": "unmatched" },
               {
+                "description": "The message must match this notice of the pack and so be dropped.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["notice"],
+                "properties": {
+                  "notice": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+                }
+              },
+              {
                 "type": "object",
                 "additionalProperties": false,
                 "required": ["rule", "type", "direction", "amount_minor", "time"],

@@ -29,7 +29,8 @@ rules: []
 schema: 1
 id: co_op_bank
 name: Co-operative Bank
-version: 0.1.1
+version: 0.2.0
+min_engine: 0.4.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -59,6 +60,15 @@ rules:
     ignore_case: true
     time_format: "M/d/yyyy 'at' HH:mm:ss"
     pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
+
+# Messages known not to be transactions, tried only when no rule matched.
+# The app drops them without asking the person.
+notices:
+  # A card balance enquiry ("Card BAL ENQ") or statement request ("Card STM
+  # REQ"), printed like a card transaction of KES 0. No money moved.
+  - id: card_enquiry
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card (?:BAL ENQ|STM REQ) transaction dated \d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2} of KES\s*0(?:\.0{1,2})?\s.*Was Successful\.'
 ''',
   'equity': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -124,7 +134,7 @@ rules:
 schema: 1
 id: kcb
 name: KCB
-version: 0.4.0
+version: 0.4.1
 min_engine: 0.4.0
 currency: KES
 utc_offset: "+03:00"
@@ -133,8 +143,9 @@ senders:
 time_format: "dd/MM/yyyy 'at' HH:mm"
 
 # No rule reads declined card payments ("... has been declined. Reason -
-# Insufficient funds.Balance KES..."): no money moved, so they stay with the
-# review inbox and their balance is never taken as the account's.
+# Insufficient funds.Balance KES..."): no money moved, so their balance is
+# never taken as the account's. The declined_card_payment notice below drops
+# them instead of leaving them in the review inbox.
 rules:
   # A loan repaid from the KCB account. "account" is the loan's number,
   # "counterparty" the loan as printed, "owed" the balance left and "due"
@@ -196,7 +207,8 @@ rules:
   # currency, while the amount is often in another (USD), and a message
   # carries one currency. The card number is not read as the account
   # either, so the payment lands on the KCB account, not a separate card.
-  # A declined payment starts the same way but has no ", Avail balance".
+  # A declined payment starts the same way but has no ", Avail balance";
+  # the declined_card_payment notice drops it.
   - id: card_payment
     type: bank
     direction: out
@@ -225,6 +237,14 @@ rules:
       credited: in
     time_format: "dd/MM/yyyy 'at' h:mm a"
     pattern: '^Dear [^,]+, your KCB A/C (?<own_account>[\d*]+) has been (?<direction>debited|credited) with (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) (?:from|to) (?<counterparty>.+?) on (?<time>\d{2}/\d{2}/\d{4} at \d{1,2}:\d{2} [AP]M)\. Ref: (?<receipt>[A-Z0-9]+)\. Avail Bal [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})'
+
+# Messages known not to be transactions, tried only when no rule matched.
+# The app drops them without asking the person.
+notices:
+  # A card payment KCB refused ("... has been declined. Reason - ..."). No
+  # money moved, and its "Balance" is not read.
+  - id: declined_card_payment
+    pattern: '^[A-Z]{3} ?[\d,]+\.\d{2} transaction made on KCB card [\d*]+ at .+? on \d{2}/\d{2}/\d{4} \d{2}:\d{2}(?:[AaPp][Mm])? has been declined\.'
 ''',
   'loop': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json

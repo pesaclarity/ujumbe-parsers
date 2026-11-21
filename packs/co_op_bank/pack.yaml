@@ -3,7 +3,8 @@
 schema: 1
 id: co_op_bank
 name: Co-operative Bank
-version: 0.1.1
+version: 0.2.0
+min_engine: 0.4.0
 currency: KES
 utc_offset: "+03:00"
 senders:
@@ -33,3 +34,12 @@ rules:
     ignore_case: true
     time_format: "M/d/yyyy 'at' HH:mm:ss"
     pattern: '^Dear [^,]+,\s*you have sent Ksh\.?\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+to (?<counterparty>.+?)\s+for (?<account>[\dA-Za-z*]+)\s+on (?<time>\d{1,2}/\d{1,2}/\d{4} at \d{2}:\d{2}:\d{2})\.\s*MPESA Ref\.\s*(?<receipt>[A-Z0-9]+)\.'
+
+# Messages known not to be transactions, tried only when no rule matched.
+# The app drops them without asking the person.
+notices:
+  # A card balance enquiry ("Card BAL ENQ") or statement request ("Card STM
+  # REQ"), printed like a card transaction of KES 0. No money moved.
+  - id: card_enquiry
+    ignore_case: true
+    pattern: '^Dear [^,]+,\s*Card (?:BAL ENQ|STM REQ) transaction dated \d{2}-[A-Z]{3}-\d{4} \d{2}:\d{2}:\d{2} of KES\s*0(?:\.0{1,2})?\s.*Was Successful\.'
