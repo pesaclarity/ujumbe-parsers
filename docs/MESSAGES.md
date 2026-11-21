@@ -124,22 +124,22 @@ Dear Customer, Equity mobile banking will be briefly unavailable tonight from 11
 
 ## Etica Capital
 
-Pack `etica` 0.1.0 · senders `ETICA`, `ETICACAPITAL`, `ETICA_CAP` · rules `payout`
+Pack `etica` 0.1.0 · senders `ETICALTD` · rules `payout`
 
-**withdraw from the fund to M-Pesa** (`ETICA` → `payout` · money out)
+**withdraw from the fund to M-Pesa** (`ETICALTD` → `payout` · money out)
 
 ```text
 Dear esteemed client,
 Your payment of KES 400.00 to 0700000000 - JANE WANJIRU DOE  from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035
 ```
 
-**withdraw from the fund, on one line** (`ETICACAPITAL` → `payout` · money out)
+**withdraw from the fund, on one line** (`ETICALTD` → `payout` · money out)
 
 ```text
 Dear esteemed client, Your payment of KES 1,000.00 to 0711000000 - JOHN DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000047
 ```
 
-**a statement notice goes to the review inbox** (`ETICA` → review inbox)
+**a statement notice goes to the review inbox** (`ETICALTD` → review inbox)
 
 ```text
 Dear esteemed client, your monthly statement for account 000000M is ready. Log in to view it.
