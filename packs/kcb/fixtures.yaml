@@ -186,7 +186,21 @@ samples:
       receipt: KCB0000000000003
       counterparty: JANE DOE
       own_account: 123****456
+      account: TJA0000001
       time: '2026-10-26T09:15:00+03:00'
+
+  - name: send to a mobile wallet with no M-Pesa ref printed
+    sender: KCB
+    body: 'KCB0000000000031  KES 500.00 sent from 123****456 to 254****789 - JANE DOE on 2026-10-27 10:20:00 AM.'
+    expect:
+      rule: wallet_transfer
+      type: bank
+      direction: out
+      amount_minor: 50000
+      receipt: KCB0000000000031
+      counterparty: JANE DOE
+      own_account: 123****456
+      time: '2026-10-27T10:20:00+03:00'
 
   - name: named account credited
     sender: KCB

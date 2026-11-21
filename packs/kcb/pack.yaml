@@ -5,7 +5,7 @@
 schema: 1
 id: kcb
 name: KCB
-version: 0.4.1
+version: 0.4.2
 min_engine: 0.4.0
 currency: KES
 utc_offset: "+03:00"
@@ -93,13 +93,16 @@ rules:
       credited: in
     pattern: '^Dear Customer, (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) has been (?<direction>debited|credited) (?:from|to) your account (?<own_account>[\d*]+) on (?<time>\d{2}/\d{2}/\d{4} at \d{2}:\d{2})\. Transaction Ref: (?<receipt>[A-Z0-9]+)\. Your available balance is [A-Z]{3} ?(?<balance>[\d,]+\.\d{2})\.'
 
-  # Sent from a KCB account to a mobile wallet; the receipt leads.
-  # "account" is the masked KCB account, "counterparty" the recipient.
+  # Sent from a KCB account to a mobile wallet; KCB's receipt leads.
+  # "own_account" is the masked KCB account, "counterparty" the recipient,
+  # and "account" the M-Pesa ref when printed ("M-PESA REF: ..."), which
+  # M-Pesa's own message for the same money prints as its receipt, so the
+  # app keeps one transfer for both.
   - id: wallet_transfer
     type: bank
     direction: out
     time_format: "yyyy-MM-dd hh:mm:ss a"
-    pattern: '^(?<receipt>[A-Z0-9]{16})\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) sent from (?<own_account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.'
+    pattern: '^(?<receipt>[A-Z0-9]{16})\s+(?<currency>[A-Z]{3}) ?(?<amount>[\d,]+\.\d{2}) sent from (?<own_account>[\d*]+) to \S+ - (?<counterparty>.+?) on (?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [AP]M)\.(?:\s*M-?PESA REF:?\s*(?<account>[A-Z0-9]{10})\b)?'
 
   - id: account_named
     type: bank
