@@ -121,11 +121,19 @@ samples:
       time: '2026-10-23T08:30:00+03:00'
 
   # A declined card payment moved no money: it must never become a
-  # transaction, and its "Balance" is not read as the account's.
+  # transaction, and its "Balance" is not read as the account's. It is a
+  # known notice, so the app drops it instead of asking the person.
   - name: declined card payment is not a transaction
     sender: KCB
     body: 'USD 3.50 transaction made on KCB card 4111***0007 at example-store.co on 21/10/2026 20:41pm has been declined. Reason - Insufficient funds.Balance KESKES 0.00. Queries call +254700000000. Pata extra cash with a flexible Mobile Loan. Dial *000# or use'
-    expect: unmatched
+    expect:
+      notice: declined_card_payment
+
+  - name: declined card payment in shillings, morning time
+    sender: KCB
+    body: 'KES 1,250.00 transaction made on KCB card 4111***0007 at EXAMPLE GROCERS on 02/11/2026 09:05am has been declined. Reason - Insufficient funds.Balance KES 120.00. Queries call +254711087000.'
+    expect:
+      notice: declined_card_payment
 
   - name: account debited
     sender: KCB

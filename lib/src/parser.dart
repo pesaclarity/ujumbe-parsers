@@ -30,11 +30,43 @@ sealed class ParseResult {
   const ParseResult();
 }
 
-/// The sender is not one of the user's selected accounts. The message must
-/// be dropped without being stored.
+/// The message must be dropped without being stored: the sender is not one
+/// of the user's selected accounts, or (as a [KnownNotice]) the pack knows
+/// the message is not a transaction.
 final class Ignored extends ParseResult {
   /// Creates an ignored result.
   const Ignored();
+}
+
+/// The sender is selected and no rule matched, but one of the pack's
+/// [ParserPack.notices] did: the message is known not to be a transaction,
+/// such as a declined card payment. Drop it without storing it or sending
+/// it to the review inbox. Holds no raw text.
+///
+/// It is an [Ignored], so code written before notices existed drops it as
+/// it drops other senders' messages. Match it before [Ignored] to tell the
+/// two apart, for example to take a message that an older pack left in the
+/// review inbox back out of it by [rawHash].
+final class KnownNotice extends Ignored {
+  /// Creates a known-notice result.
+  const KnownNotice({
+    required this.packId,
+    required this.packVersion,
+    required this.noticeId,
+    required this.rawHash,
+  });
+
+  /// The pack that owns the sender.
+  final String packId;
+
+  /// The version of that pack.
+  final String packVersion;
+
+  /// The [PackNotice.id] that matched, e.g. `declined_card_payment`.
+  final String noticeId;
+
+  /// [hashMessageBody] of the body.
+  final String rawHash;
 }
 
 /// The sender is selected, but no rule matched. The message goes to the
@@ -217,7 +249,11 @@ class SmsParser {
   final SenderFilter _filter;
 
   /// Parses [message] into a [ParsedTransaction], an [Unmatched] message
-  /// for the review inbox, or [Ignored] when the sender is not selected.
+  /// for the review inbox, a [KnownNotice] when the pack knows the message
+  /// is not a transaction, or [Ignored] when the sender is not selected.
+  ///
+  /// Notices are tried only once no rule matches, so a notice never hides a
+  /// transaction.
   ParseResult parse(SmsMessage message) {
     final pack = _filter.packFor(message.sender);
     if (pack == null) return const Ignored();
@@ -227,6 +263,15 @@ class SmsParser {
       final match = rule.pattern.firstMatch(message.body);
       if (match == null) continue;
       return _build(pack, rule, match, message, rawHash);
+    }
+    for (final notice in pack.notices) {
+      if (!notice.pattern.hasMatch(message.body)) continue;
+      return KnownNotice(
+        packId: pack.id,
+        packVersion: pack.version,
+        noticeId: notice.id,
+        rawHash: rawHash,
+      );
     }
     return Unmatched(
       packId: pack.id,

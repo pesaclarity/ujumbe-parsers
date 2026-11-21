@@ -1,6 +1,6 @@
 # ujumbe-parsers
 
-SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Co-operative Bank, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, and sends anything it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and with plain Dart on any machine.
+SMS parser packs and the pure Dart engine that reads them (and M-Pesa statements), for [Pesa Clarity](https://github.com/pesaclarity/docs). Each institution (M-Pesa, Airtel Money, Co-operative Bank, Equity, I&M, KCB, Loop, Standard Chartered and, with your help, many more) gets a YAML pack of regex rules with synthetic sample messages. The engine reads only the senders a user has selected, turns each message into a typed transaction with amounts in integer cents, keeps a hash instead of the raw text, drops messages a pack knows are not transactions (such as a declined card payment), and sends anything else it cannot read to the user's review inbox. It has no Flutter dependency, so it runs in phone isolates and with plain Dart on any machine.
 
 **Codename:** ujumbe, Swahili for "message".
 
@@ -41,10 +41,15 @@ switch (parser.parse(SmsMessage(sender: from, body: text, receivedAt: at))) {
     // Store t's fields, t.rawHash and t.dedupeKey; discard the raw text.
   case Unmatched u:
     // Known sender, no rule matched: hold for the review inbox.
+  case KnownNotice n:
+    // Known sender, known not to be a transaction (n.noticeId, such as
+    // declined_card_payment): drop it, never store it or ask the user.
   case Ignored():
     // Not a selected sender: drop it, never store it.
 }
 ```
+
+`KnownNotice` is a subtype of `Ignored`, so code that predates notices drops them as it drops other senders' messages. Match it before `Ignored` to count notices, or to take a message an older pack left in the review inbox back out of it by `n.rawHash`.
 
 Statements backfill history and check balances. The app extracts each page's words with their positions from the PDF (and handles its password); the engine picks the layout and reads it:
 
@@ -135,6 +140,16 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
 
    Rules are tried in order and the first match wins, so put specific shapes before general ones. When a message describes money moving on another institution's account, such as a bank's confirmation of an M-Pesa payment into it, set `institution` on the rule to that institution's pack id (`institution: mpesa`); the app then records it on that account, and the bank's own alert records the other side. Set `ignore_case: true` on a rule when the institution's wording changes case (`M-PESA` and `M-Pesa`). Sender IDs always compare without case, so `AirtelMoney` matches `airtelmoney`. If a message prints no time, the engine uses the time the phone received it. Then set `min_engine` if the pack uses a newer feature (see Engine versions below).
 
+   **Notices.** Some messages from a selected sender are known not to be transactions: a declined card payment, a balance enquiry printed like a card transaction of KES 0. Rather than leave them in the review inbox, list them under `notices`, each with an `id` and a `pattern` (and `ignore_case` if needed):
+
+   ```yaml
+   notices:
+     - id: declined_card_payment
+       pattern: '^[A-Z]{3} ?[\d,]+\.\d{2} transaction made on KCB card [\d*]+ at .+? has been declined\.'
+   ```
+
+   Notices are tried only after every rule has failed to match, so a notice never hides a transaction. A match parses as a `KnownNotice` naming the notice's `id`, and the app drops it without storing it or asking the person. A notice reads no fields, so its pattern has no named groups. Anchor it with `^` and keep it narrow: unlike an unmatched message, a notice is never reviewed. Only add one for a shape known from real messages (as a synthetic sample), never for a guessed format.
+
    **Engine versions.** `min_engine` (a [SemVer 2.0](https://semver.org) version, default `0.1.0`) names the oldest engine that can read the pack. An older engine refuses the whole pack with a `PackEngineException` (over the air: a `PackRejection` with reason `engineTooOld`), so the phone keeps its current copy instead of reading the pack half-way. Pre-releases count as older than their release: `0.4.0-beta.1` does not meet `min_engine: 0.4.0`. The engine also refuses a pack whose `min_engine` is lower than a feature it uses needs, so set at least:
 
    | Feature | `min_engine` |
@@ -142,11 +157,11 @@ New banks, SACCOs and wallets are the main way to contribute. Every pack is gate
    | `own_account` or `currency` group, or `rules: []` (review-only) | `0.2.0` |
    | `owed` or `due` group, or `due_format` | `0.3.0` |
    | `min_engine` on a rule | `0.3.1` (the first release after 0.3.0) |
-   | `loan_repayment` type, or `institution` on a rule | `0.4.0` |
+   | `loan_repayment` type, `institution` on a rule, or `notices` | `0.4.0` |
 
    To add a rule for a newer engine without cutting older phones off the rest of the pack, give that rule its own `min_engine`. An older engine skips just that rule, lists it in `ParserPack.skippedRules`, and sends its messages to the review inbox; it reads the rest of the pack as usual.
 
-3. **Write `fixtures.yaml`.** At least one sample per rule, plus samples that must stay `unmatched` (promotions, notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent.
+3. **Write `fixtures.yaml`.** At least one sample per rule and per notice, plus samples that must stay `unmatched` (promotions, service notices, balance enquiries). Every field the rule captures must appear in `expect`; a field left out must parse as absent. A sample a notice must drop has `expect: {notice: <id>}`, with no other fields.
 4. **Check it.** `dart run tool/check_packs.dart packs/<id>`, then `dart run tool/bundle_packs.dart` to ship it with the package, `dart run tool/message_examples.dart` to list its samples in [docs/MESSAGES.md](docs/MESSAGES.md), then `dart test`. Your editor can also validate against `schema/` through the `yaml-language-server` comment at the top of each file.
 5. **Open a pull request** naming the institution and which message types you covered.
 

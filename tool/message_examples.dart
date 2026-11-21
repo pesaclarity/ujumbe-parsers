@@ -61,7 +61,9 @@ String renderExamples(List<PackDirectory> packs) {
     ..writeln(
       'All samples are synthetic: fake names, masked fake numbers and '
       'made-up receipts, written in the shape of real alerts. "Review inbox" '
-      'means no rule reads the message, so the person checks it once.',
+      'means no rule reads the message, so the person checks it once; '
+      '"dropped" means a notice in the pack knows it is not a transaction, '
+      'so the app drops it without asking.',
     )
     ..writeln();
   for (final p in packs) {
@@ -72,17 +74,23 @@ String renderExamples(List<PackDirectory> packs) {
     final rules = pack.rules.isEmpty
         ? 'none yet (review-only)'
         : pack.rules.map((r) => '`${r.id}`').join(', ');
+    final notices = pack.notices.isEmpty
+        ? ''
+        : ' · notices ${pack.notices.map((n) => '`${n.id}`').join(', ')}';
     out
       ..writeln()
       ..writeln('## ${pack.name}')
       ..writeln()
       ..writeln(
         'Pack `${pack.id}` ${pack.version} · senders '
-        '${pack.senders.map((s) => '`$s`').join(', ')} · rules $rules',
+        '${pack.senders.map((s) => '`$s`').join(', ')} · rules $rules$notices',
       );
     for (final sample in p.fixtures.samples) {
       final expected = sample.expected;
-      final result = expected == null
+      final notice = sample.notice;
+      final result = notice != null
+          ? 'notice `$notice` · dropped'
+          : expected == null
           ? 'review inbox'
           : '`${expected['rule']}` · ${expected['direction'] == 'in' ? 'money in' : 'money out'}';
       out

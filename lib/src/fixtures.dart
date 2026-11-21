@@ -45,7 +45,7 @@ class PackFixtures {
   /// Runs every sample against [pack] and reports the results.
   ///
   /// A pack is valid only when [FixtureReport.passed] is true: every sample
-  /// matches and every rule is exercised by at least one sample.
+  /// matches and every rule and notice is exercised by at least one sample.
   FixtureReport run(ParserPack pack) {
     final parser = SmsParser([pack]);
     final failures = <String>[];
@@ -53,9 +53,11 @@ class PackFixtures {
       failures.add('fixtures are for "$packId", not "${pack.id}"');
     }
     final covered = <String>{};
+    final coveredNotices = <String>{};
     for (final sample in samples) {
       final result = parser.parse(sample.message);
       if (result is ParsedTransaction) covered.add(result.ruleId);
+      if (result is KnownNotice) coveredNotices.add(result.noticeId);
       for (final problem in sample.check(result, packCurrency: pack.currency)) {
         failures.add('${sample.name}: $problem');
       }
@@ -63,6 +65,11 @@ class PackFixtures {
     for (final rule in pack.rules) {
       if (!covered.contains(rule.id)) {
         failures.add('rule "${rule.id}" has no passing sample');
+      }
+    }
+    for (final notice in pack.notices) {
+      if (!coveredNotices.contains(notice.id)) {
+        failures.add('notice "${notice.id}" has no passing sample');
       }
     }
     return FixtureReport(
@@ -76,11 +83,12 @@ class PackFixtures {
 /// One synthetic message and what parsing it must produce.
 class FixtureSample {
   /// Creates a sample. A `null` [expected] means the message must be
-  /// [Unmatched].
+  /// [Unmatched], or, with a [notice], that [KnownNotice].
   const FixtureSample({
     required this.name,
     required this.message,
     required this.expected,
+    this.notice,
   });
 
   /// Short description shown in failure reports.
@@ -89,8 +97,13 @@ class FixtureSample {
   /// The synthetic message.
   final SmsMessage message;
 
-  /// Expected fields, keyed as in fixture files; `null` means unmatched.
+  /// Expected fields, keyed as in fixture files; `null` means unmatched,
+  /// or the [notice].
   final Map<String, Object?>? expected;
+
+  /// The [PackNotice.id] the message must match (`expect: {notice: id}`),
+  /// or `null` when it must not be a notice.
+  final String? notice;
 
   /// Every field a parsed sample is compared on. Fields left out of a
   /// fixture must parse as absent, so a rule cannot silently capture extra;
@@ -116,6 +129,12 @@ class FixtureSample {
   /// Lists how [result] differs from what this sample expects, for a pack
   /// whose messages are in [packCurrency] unless they say otherwise.
   List<String> check(ParseResult result, {required String packCurrency}) {
+    final notice = this.notice;
+    if (notice != null) {
+      return result is KnownNotice && result.noticeId == notice
+          ? const []
+          : ['expected notice "$notice", got ${_describe(result)}'];
+    }
     final expected = this.expected;
     if (expected == null) {
       return result is Unmatched
@@ -123,7 +142,10 @@ class FixtureSample {
           : ['expected unmatched, got ${_describe(result)}'];
     }
     if (result is! ParsedTransaction) {
-      final reason = result is Unmatched ? result.reason : 'ignored';
+      final reason = switch (result) {
+        Unmatched(:final reason) => reason,
+        _ => _describe(result),
+      };
       return ['expected a transaction, got $reason'];
     }
     final actual = <String, Object?>{
@@ -160,6 +182,7 @@ class FixtureSample {
   static String _describe(ParseResult r) => switch (r) {
     ParsedTransaction(:final ruleId) => 'rule "$ruleId"',
     Unmatched() => 'unmatched',
+    KnownNotice(:final noticeId) => 'notice "$noticeId"',
     Ignored() => 'ignored',
   };
 
@@ -188,7 +211,14 @@ class FixtureSample {
       }
     }
     Map<String, Object?>? expected;
-    if (expect is YamlMap) {
+    String? notice;
+    if (expect is YamlMap && expect.containsKey('notice')) {
+      notice = expect['notice'] is String ? expect['notice'] as String : null;
+      if (notice == null) problems.add('$at.expect.notice: must be a string');
+      if (expect.length > 1) {
+        problems.add('$at.expect: a notice reads no fields; give only notice');
+      }
+    } else if (expect is YamlMap) {
       expected = {for (final e in expect.entries) '${e.key}': e.value};
       for (final key in expected.keys) {
         if (!fields.contains(key)) {
@@ -203,7 +233,9 @@ class FixtureSample {
         problems.add('$at.expect.time: must be an ISO 8601 time');
       }
     } else if (expect != 'unmatched') {
-      problems.add('$at.expect: must be a mapping or "unmatched"');
+      problems.add(
+        '$at.expect: must be a mapping, {notice: <id>} or "unmatched"',
+      );
     }
     if (problems.length > start) return null;
     return FixtureSample(
@@ -214,6 +246,7 @@ class FixtureSample {
         receivedAt: receivedAt!,
       ),
       expected: expected,
+      notice: notice,
     );
   }
 }
