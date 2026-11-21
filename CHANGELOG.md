@@ -2,6 +2,22 @@
 
 All notable changes to this package are listed here. Versions follow [semantic versioning](https://semver.org); until 1.0 a minor version may break the pack format or the API.
 
+## [0.4.0](https://github.com/pesaclarity/ujumbe-parsers/compare/v0.3.0...v0.4.0) (2026-11-21)
+
+
+### Features
+
+* drop known notices such as KCB's declined card payments ([80fe7b2](https://github.com/pesaclarity/ujumbe-parsers/commit/80fe7b28c8f30158d95656cc80b594d798fb9162))
+* read approved KCB card payments ([31f740b](https://github.com/pesaclarity/ujumbe-parsers/commit/31f740b0f7b4e5844f6958283f26daf71ca401b4))
+* read KCB loan repayments, Mobi credits and KCB's M-Pesa confirmations ([dca151e](https://github.com/pesaclarity/ujumbe-parsers/commit/dca151e24288784e13c968cbaa85170de9bba2c8))
+* read KCB PesaLink transfers and every account debit and credit channel ([51c8396](https://github.com/pesaclarity/ujumbe-parsers/commit/51c83961c3fe92dc2ba6c5632cec7b74a886b9d4))
+
+
+### Fixes
+
+* **engine:** enforce min_engine and per-feature engine gates ([4990983](https://github.com/pesaclarity/ujumbe-parsers/commit/4990983a3caafe5b544b77d50554caa8c645aebd))
+* **packs:** mark Loop and Airtel Money as needing engine 0.2.0 ([3fd9299](https://github.com/pesaclarity/ujumbe-parsers/commit/3fd92993c574fdbf48dbf76c992dda325641c64d))
+
 ## [0.3.0](https://github.com/pesaclarity/ujumbe-parsers/compare/v0.1.0...v0.3.0) (2026-11-17)
 
 
