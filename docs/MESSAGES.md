@@ -169,7 +169,7 @@ Dear Customer, your account 0000****002 has been credited with EUR 2,000.00 on 0
 
 ## KCB
 
-Pack `kcb` 0.4.1 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named` · notices `declined_card_payment`
+Pack `kcb` 0.4.2 · senders `KCB` · rules `loan_repayment`, `account_movement`, `mpesa_paybill`, `mpesa_received`, `pesalink_sent`, `card_payment`, `account_alert`, `wallet_transfer`, `account_named` · notices `declined_card_payment`
 
 **repay a salary advance from the KCB account** (`KCB` → `loan_repayment` · money out)
 
@@ -259,6 +259,12 @@ Dear Customer, USD 250.00 has been debited from your account ****0002 on 03/11/2
 
 ```text
 KCB0000000000003  KES 1,000.00 sent from 123****456 to 254****789 - JANE DOE on 2026-10-26 09:15:00 AM. M-PESA REF: TJA0000001
+```
+
+**send to a mobile wallet with no M-Pesa ref printed** (`KCB` → `wallet_transfer` · money out)
+
+```text
+KCB0000000000031  KES 500.00 sent from 123****456 to 254****789 - JANE DOE on 2026-10-27 10:20:00 AM.
 ```
 
 **named account credited** (`KCB` → `account_named` · money in)
