@@ -5,43 +5,30 @@ samples:
   # The twin of the mpesa pack's send to AIRTEL MONEY (TJA0000037).
   - name: receive money from M-Pesa, with the sender's reference
     sender: AirtelMoney
-    received_at: '2026-11-14T15:01:00+03:00'
-    body: 'TID:TJA0000040. Received Ksh 100 from JOHN DOE 0711000000 on 14/11/26 15:00. Bal Ksh 220. Sender TID:TJA0000037.'
+    body: 'TID:TJA0000040. Received Ksh 100 from JOHN KAMAU DOE 254711000000 on 14/11/26 03:00 PM. Bal:Ksh 220.0 Sender TID:TJA0000037.'
     expect:
       rule: received
       type: received
       direction: in
       amount_minor: 10000
+      balance_minor: 22000
       receipt: TJA0000040
-      counterparty: JOHN DOE
+      counterparty: JOHN KAMAU DOE
       account: TJA0000037
-      time: '2026-11-14T15:01:00+03:00'
+      time: '2026-11-14T15:00:00+03:00'
 
-  - name: receive money with decimals and no phone number
-    sender: AIRTELMONEY
-    received_at: '2026-11-14T16:00:00+03:00'
-    body: 'TID: TJA0000041 received Ksh 1,500.00 from JANE DOE. New balance Ksh 1,620.00. Sender TID: TJA0000042'
-    expect:
-      rule: received
-      type: received
-      direction: in
-      amount_minor: 150000
-      receipt: TJA0000041
-      counterparty: JANE DOE
-      account: TJA0000042
-      time: '2026-11-14T16:00:00+03:00'
-
-  - name: buy a data bundle
+  - name: buy a bundle
     sender: AirtelMoney
-    received_at: '2026-11-15T09:00:00+03:00'
-    body: 'TID:TJA0000043. You have bought a 1GB Data Bundle valid for 24 hours worth Ksh 99. Bal Ksh 1,521.00.'
+    body: '10000000001 Confirmed. Bundle purchase successful of Ksh 20 via Airtel Networks Kenya Ltd on 15/11/26 at 06:01 PM. Bal: Ksh 0.0.'
     expect:
       rule: bundle
       type: airtime
       direction: out
-      amount_minor: 9900
-      receipt: TJA0000043
-      time: '2026-11-15T09:00:00+03:00'
+      amount_minor: 2000
+      balance_minor: 0
+      receipt: '10000000001'
+      counterparty: Airtel Networks Kenya Ltd
+      time: '2026-11-15T18:01:00+03:00'
 
   - name: an unknown alert goes to the review inbox
     sender: AirtelMoney

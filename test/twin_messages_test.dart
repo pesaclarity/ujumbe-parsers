@@ -18,8 +18,8 @@ void main() {
   test('an Etica payout and its M-Pesa credit share the M-Pesa receipt', () {
     final etica = parse(
       'ETICA',
-      'Dear esteemed client, Your payment of KES 400.00 to 0700000000 - '
-          'JANE DOE from account 000000M (EMMF - KES) has been processed '
+      'Dear esteemed client,\nYour payment of KES 400.00 to 0700000000 - '
+          'JANE WANJIRU DOE  from account 000000M (EMMF - KES) has been processed '
           'successfully. Transaction ref: TJA0000035',
     );
     final mpesa = parse(
@@ -38,14 +38,14 @@ void main() {
   test('an M-Pesa send to Airtel Money is the Airtel credit\'s Sender TID', () {
     final mpesa = parse(
       'MPESA',
-      'TJA0000037 Confirmed. Ksh100.00 sent to AIRTEL MONEY for account '
-          '0730000000 on 14/11/26 at 3:00 PM New M-PESA balance is '
+      'TJA0000037 confirmed. Ksh100.00 sent to AIRTEL MONEY  for account '
+          '254730000000 on 14/11/26 at 3:00 PM New M-PESA balance is '
           'Ksh4,885.50. Transaction cost, Ksh15.00.',
     );
     final airtel = parse(
       'AirtelMoney',
-      'TID:TJA0000040. Received Ksh 100 from JOHN DOE 0711000000 on '
-          '14/11/26 15:00. Bal Ksh 220. Sender TID:TJA0000037.',
+      'TID:TJA0000040. Received Ksh 100 from JOHN KAMAU DOE 254711000000 '
+          'on 14/11/26 03:00 PM. Bal:Ksh 220.0 Sender TID:TJA0000037.',
     );
     expect(airtel.receipt, 'TJA0000040');
     expect(airtel.account, mpesa.receipt);

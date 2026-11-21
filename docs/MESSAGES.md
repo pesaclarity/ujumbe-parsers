@@ -21,19 +21,13 @@ Pack `airtel_money` 0.2.0 · senders `AirtelMoney` · rules `received`, `bundle`
 **receive money from M-Pesa, with the sender's reference** (`AirtelMoney` → `received` · money in)
 
 ```text
-TID:TJA0000040. Received Ksh 100 from JOHN DOE 0711000000 on 14/11/26 15:00. Bal Ksh 220. Sender TID:TJA0000037.
+TID:TJA0000040. Received Ksh 100 from JOHN KAMAU DOE 254711000000 on 14/11/26 03:00 PM. Bal:Ksh 220.0 Sender TID:TJA0000037.
 ```
 
-**receive money with decimals and no phone number** (`AIRTELMONEY` → `received` · money in)
+**buy a bundle** (`AirtelMoney` → `bundle` · money out)
 
 ```text
-TID: TJA0000041 received Ksh 1,500.00 from JANE DOE. New balance Ksh 1,620.00. Sender TID: TJA0000042
-```
-
-**buy a data bundle** (`AirtelMoney` → `bundle` · money out)
-
-```text
-TID:TJA0000043. You have bought a 1GB Data Bundle valid for 24 hours worth Ksh 99. Bal Ksh 1,521.00.
+10000000001 Confirmed. Bundle purchase successful of Ksh 20 via Airtel Networks Kenya Ltd on 15/11/26 at 06:01 PM. Bal: Ksh 0.0.
 ```
 
 **an unknown alert goes to the review inbox** (`AirtelMoney` → review inbox)
@@ -130,12 +124,19 @@ Dear Customer, Equity mobile banking will be briefly unavailable tonight from 11
 
 ## Etica Capital
 
-Pack `etica` 0.1.0 · senders `ETICA` · rules `payout`
+Pack `etica` 0.1.0 · senders `ETICA`, `ETICACAPITAL`, `ETICA_CAP` · rules `payout`
 
 **withdraw from the fund to M-Pesa** (`ETICA` → `payout` · money out)
 
 ```text
-Dear esteemed client, Your payment of KES 400.00 to 0700000000 - JANE DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035
+Dear esteemed client,
+Your payment of KES 400.00 to 0700000000 - JANE WANJIRU DOE  from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035
+```
+
+**withdraw from the fund, on one line** (`ETICACAPITAL` → `payout` · money out)
+
+```text
+Dear esteemed client, Your payment of KES 1,000.00 to 0711000000 - JOHN DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000047
 ```
 
 **a statement notice goes to the review inbox** (`ETICA` → review inbox)
@@ -445,13 +446,7 @@ TJA0000030 Confirmed. Ksh1,000.00 sent to ZIIDI on 12/11/26 at 2:30 PM New M-PES
 **withdraw from Ziidi** (`MPESA` → `ziidi_withdraw` · money in)
 
 ```text
-TJA0000031 Confirmed.You have received Ksh600.00 from ZIIDI on 13/11/26 at 9:05 AM New M-PESA balance is Ksh600.50.
-```
-
-**withdraw from Ziidi with its short code** (`MPESA` → `ziidi_withdraw` · money in)
-
-```text
-TJA0000032 Confirmed.You have received Ksh400.00 from ZIIDI 1 900002 on 13/11/26 at 9:20 AM New M-PESA balance is Ksh1,000.50.
+TJA0000031 Confirmed.You have received Ksh600.00 from ZIIDI on 13/11/26 5:03 PM. New M-PESA balance is Ksh650.00.  See all your balances now https://example.com/x.
 ```
 
 **withdraw from M-Shwari into M-Pesa** (`MPESA` → `mshwari_withdraw` · money in)
@@ -494,6 +489,24 @@ TJA0000038 Confirmed. Ksh50.00 sent to AIRTEL MONEY on 14/11/26 at 3:10 PM New M
 
 ```text
 TJA0000039 Confirmed.You have received Ksh200.00 from JOHN DOE 0711***000 on 15/11/26 at 8:40 AM New Pochi balance is Ksh1,200.00.
+```
+
+**send to Airtel Money, lower case and a double space** (`MPESA` → `airtel_money_sent` · money out)
+
+```text
+TJA0000044 confirmed. Ksh30.00 sent to AIRTEL MONEY  for account 254730000000 on 17/11/26 at 1:46 PM New M-PESA balance is Ksh120.50. Transaction cost, Ksh0.00.
+```
+
+**send money, with confirmed in lower case** (`MPESA` → `sent` · money out)
+
+```text
+TJA0000045 confirmed. Ksh250.00 sent to JANE DOE 0700***001 on 17/11/26 at 2:00 PM. New M-PESA balance is Ksh870.50. Transaction cost, Ksh7.00.
+```
+
+**receive into Pochi from a lower-case name** (`MPESA` → `pochi_received` · money in)
+
+```text
+TJA0000046 Confirmed.You have received Ksh150.00 from jane  doe 0700***002 on 17/11/26 at 3:15 PM New Pochi balance is Ksh1,350.00.
 ```
 
 ## Standard Chartered
