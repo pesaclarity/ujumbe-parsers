@@ -22,6 +22,7 @@ void main() {
         'airtel_money',
         'co_op_bank',
         'standard_chartered',
+        'etica',
       ]),
     );
   });

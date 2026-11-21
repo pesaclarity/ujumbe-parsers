@@ -1,18 +1,36 @@
 # yaml-language-server: $schema=../../schema/pack.schema.json
-# Review-only: no public sample of Airtel Money Kenya's wording was found
-# (Uganda and Tanzania samples differ in currency and language). Every
-# message goes to the review inbox, where the reader suggests the fields
-# and the person's answers teach the app the layout. Add rules once real
-# Kenyan wording is known (as synthetic fixtures). Sender confirmed for
-# Kenya: messages arrive from "airtelmoney"; senders compare
-# case-insensitively, so AirtelMoney and AIRTELMONEY match too.
+# The rules follow real Airtel Money Kenya messages, rewritten as synthetic
+# samples in fixtures.yaml. Anything else goes to the review inbox, where
+# the reader suggests the fields and the person's answers teach the app the
+# layout. Sender confirmed for Kenya: messages arrive from "airtelmoney";
+# senders compare case-insensitively, so AirtelMoney and AIRTELMONEY match
+# too.
 schema: 1
 id: airtel_money
 name: Airtel Money
-version: 0.1.1
+version: 0.2.0
 min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
   - AirtelMoney
-rules: []
+
+rules:
+  # Money received. "receipt" is Airtel's TID and "account" the sender's
+  # own reference ("Sender TID"), which the sending side's message prints
+  # as its receipt (an M-Pesa send to AIRTEL MONEY, say), so the app can
+  # match the two. "counterparty" is the sender's name as printed; their
+  # number is not kept. The time has no "at".
+  - id: received
+    type: received
+    direction: in
+    time_format: "d/M/yy h:mm a"
+    pattern: '^TID:\s*(?<receipt>[A-Z0-9.]*[A-Z0-9])\.?\s+[Rr]eceived\s+Ksh\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+from\s+(?<counterparty>.+?)(?:\s+\+?\d{9,12})?\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*Bal:\s*Ksh\s*(?<balance>[\d,]+(?:\.\d{1,2})?)\.?\s+Sender\s+TID:\s*(?<account>[A-Z0-9.]*[A-Z0-9])'
+
+  # A data or voice bundle paid for from the wallet. "receipt" is the
+  # leading numeric ID and "counterparty" the network paid.
+  - id: bundle
+    type: airtime
+    direction: out
+    time_format: "d/M/yy 'at' h:mm a"
+    pattern: '^(?<receipt>\d{11})\s+[Cc]onfirmed\.\s*Bundle\s+purchase\s+successful\s+of\s+Ksh\s*(?<amount>[\d,]+(?:\.\d{1,2})?)\s+via\s+(?<counterparty>.+?)\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+at\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*Bal:\s*Ksh\s*(?<balance>[\d,]+(?:\.\d{1,2})?)'

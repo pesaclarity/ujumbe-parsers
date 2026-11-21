@@ -40,6 +40,7 @@ void main() {
         'loop',
         'mpesa',
         'co_op_bank',
+        'etica',
       ]),
     );
     final packs = loadBundledPacks();

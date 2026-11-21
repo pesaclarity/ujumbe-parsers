@@ -2,7 +2,7 @@
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.3.1
+version: 0.4.0
 min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
@@ -13,30 +13,61 @@ time_format: "d/M/yy 'at' h:mm a"
 # Rules are tried in order and the first match wins, so more specific
 # shapes (paybill, with "for account") come before general ones (sent).
 rules:
+  # Saving into Ziidi, Safaricom's money market fund, typed as the statement
+  # pack types unit trust investments. Before "sent", which would also read
+  # it. The app records the other side on the Ziidi account.
+  - id: ziidi_deposit
+    type: paybill
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10})\s+[Cc]onfirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2})\s+sent\s+to\s+(?<counterparty>ZIIDI(?:\s+[A-Z]+)*?)(?:\s+for\s+account\s+(?<account>\S+))?\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+at\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*New\s+M-PESA\s+balance\s+is\s+Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction\s+cost,\s+Ksh(?<fee>[\d,]+\.\d{2})\.'
+
+  # Sent to an Airtel Money wallet. "account" is the Airtel number when
+  # printed. Before "paybill" and "sent", which would also read it.
+  - id: airtel_money_sent
+    type: sent
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10})\s+[Cc]onfirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2})\s+sent\s+to\s+(?<counterparty>AIRTEL\s+MONEY)(?:\s+for\s+account)?(?:\s+(?<account>\d{9,12}))?\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+at\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*New\s+M-PESA\s+balance\s+is\s+Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction\s+cost,\s+Ksh(?<fee>[\d,]+\.\d{2})\.'
+
   - id: paybill
     type: paybill
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?) for account (?<account>\S+) on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?) for account (?<account>\S+) on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
 
   - id: sent
     type: sent
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+
+  # Taking money out of Ziidi back into M-Pesa. Before "received".
+  - id: ziidi_withdraw
+    type: received
+    direction: in
+    # Printed with no "at" before the time.
+    time_format: "d/M/yy h:mm a"
+    pattern: '^(?<receipt>[A-Z0-9]{10})\s+[Cc]onfirmed\.\s*You\s+have\s+received\s+Ksh(?<amount>[\d,]+\.\d{2})\s+from\s+(?<counterparty>ZIIDI(?:\s+[A-Z0-9]+)*?)(?:\s+(?<account>\d{5,7}))?\.?\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*New\s+M-PESA\s+balance\s+is\s+Ksh(?<balance>[\d,]+\.\d{2})\.'
 
   - id: received
     type: received
     direction: in
     pattern: '^(?:Congratulations! )?(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}|\d{5,7}))?\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
 
+  # Money paid into Pochi la Biashara, the business wallet kept apart from
+  # the M-PESA balance. "own_account" is "Pochi" as printed, so the app
+  # records it, and its balance, on the Pochi account rather than M-Pesa's.
+  - id: pochi_received
+    type: received
+    direction: in
+    pattern: '^(?<receipt>[A-Z0-9]{10})\s+[Cc]onfirmed\.\s*You\s+have\s+received\s+Ksh(?<amount>[\d,]+\.\d{2})\s+from\s+(?<counterparty>.+?)(?:\s+(?<account>0\d{2,3}[\d*]{5,7}|\d{5,7}))?\.?\s+on\s+(?<time>\d{1,2}/\d{1,2}/\d{2}\s+at\s+\d{1,2}:\d{2}\s+[AP]M)\.?\s*New\s+(?<own_account>Pochi)\s+balance\s+is\s+Ksh(?<balance>[\d,]+\.\d{2})\.'
+
   - id: till
     type: till
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) paid to (?<counterparty>.+?)\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\. Ksh(?<amount>[\d,]+\.\d{2}) paid to (?<counterparty>.+?)\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
 
   - id: withdrawal
     type: withdrawal
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\s*Withdraw Ksh(?<amount>[\d,]+\.\d{2}) from (?<account>\d+) - (?<counterparty>.+?) New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\s*Withdraw Ksh(?<amount>[\d,]+\.\d{2}) from (?<account>\d+) - (?<counterparty>.+?) New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
 
   - id: airtime
     type: airtime
@@ -75,12 +106,12 @@ rules:
   - id: mshwari_deposit
     type: paybill
     direction: out
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred to (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*New M-Shwari saving account balance is Ksh[\d,]+\.\d{2}\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred to (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*New M-Shwari saving account balance is Ksh[\d,]+\.\d{2}\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
 
   - id: mshwari_withdraw
     type: received
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred from (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-Shwari balance is Ksh[\d,]+\.\d{2}\s*\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*Ksh(?<amount>[\d,]+\.\d{2}) transferred from (?<counterparty>M-Shwari) account on (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\.\s*M-Shwari balance is Ksh[\d,]+\.\d{2}\s*\.\s*M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\s*\.\s*Transaction cost Ksh\.?\s*(?<fee>[\d,]+\.\d{2})'
 
   # Airtime for another number; "account" holds that number.
   - id: airtime_other
@@ -92,4 +123,4 @@ rules:
   - id: deposit
     type: received
     direction: in
-    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\.\s*On (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s*Give Ksh(?<amount>[\d,]+\.\d{2}) cash to (?<counterparty>.+?)\s+New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*On (?<time>\d{1,2}/\d{1,2}/\d{2}\s+at \d{1,2}:\d{2} [AP]M)\s*Give Ksh(?<amount>[\d,]+\.\d{2}) cash to (?<counterparty>.+?)\s+New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
