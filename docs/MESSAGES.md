@@ -7,6 +7,7 @@ All samples are synthetic: fake names, masked fake numbers and made-up receipts,
 - [Airtel Money](#airtel-money)
 - [Co-operative Bank](#co-operative-bank)
 - [Equity Bank](#equity-bank)
+- [Etica Capital](#etica-capital)
 - [I&M Bank](#im-bank)
 - [KCB](#kcb)
 - [Loop](#loop)
@@ -15,9 +16,27 @@ All samples are synthetic: fake names, masked fake numbers and made-up receipts,
 
 ## Airtel Money
 
-Pack `airtel_money` 0.1.1 · senders `AirtelMoney` · rules none yet (review-only)
+Pack `airtel_money` 0.2.0 · senders `AirtelMoney` · rules `received`, `bundle`
 
-**a send goes to the review inbox** (`AirtelMoney` → review inbox)
+**receive money from M-Pesa, with the sender's reference** (`AirtelMoney` → `received` · money in)
+
+```text
+TID:TJA0000040. Received Ksh 100 from JOHN DOE 0711000000 on 14/11/26 15:00. Bal Ksh 220. Sender TID:TJA0000037.
+```
+
+**receive money with decimals and no phone number** (`AIRTELMONEY` → `received` · money in)
+
+```text
+TID: TJA0000041 received Ksh 1,500.00 from JANE DOE. New balance Ksh 1,620.00. Sender TID: TJA0000042
+```
+
+**buy a data bundle** (`AirtelMoney` → `bundle` · money out)
+
+```text
+TID:TJA0000043. You have bought a 1GB Data Bundle valid for 24 hours worth Ksh 99. Bal Ksh 1,521.00.
+```
+
+**an unknown alert goes to the review inbox** (`AirtelMoney` → review inbox)
 
 ```text
 Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Balance Ksh 1,500.00. TID EX0000000001.
@@ -27,6 +46,12 @@ Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Ba
 
 ```text
 Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.
+```
+
+**a promotion goes to the review inbox** (`AirtelMoney` → review inbox)
+
+```text
+Get 2GB Data Bundle for Ksh 50 only today! Dial *000# to buy.
 ```
 
 ## Co-operative Bank
@@ -101,6 +126,22 @@ You have received 1,500.00 USD from EXAMPLE EMPLOYER LTD to your Equity account 
 
 ```text
 Dear Customer, Equity mobile banking will be briefly unavailable tonight from 11:00 PM for planned maintenance.
+```
+
+## Etica Capital
+
+Pack `etica` 0.1.0 · senders `ETICA` · rules `payout`
+
+**withdraw from the fund to M-Pesa** (`ETICA` → `payout` · money out)
+
+```text
+Dear esteemed client, Your payment of KES 400.00 to 0700000000 - JANE DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035
+```
+
+**a statement notice goes to the review inbox** (`ETICA` → review inbox)
+
+```text
+Dear esteemed client, your monthly statement for account 000000M is ready. Log in to view it.
 ```
 
 ## I&M Bank
@@ -249,7 +290,7 @@ Example alert: KES 2,500.00 received from JANE DOE on 26/10/2026 at 10:02. Ref E
 
 ## M-Pesa
 
-Pack `mpesa` 0.3.1 · senders `MPESA` · rules `paybill`, `sent`, `received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
+Pack `mpesa` 0.4.0 · senders `MPESA` · rules `ziidi_deposit`, `airtel_money_sent`, `paybill`, `sent`, `ziidi_withdraw`, `received`, `pochi_received`, `till`, `withdrawal`, `airtime`, `fuliza`, `fuliza_repayment`, `reversal`, `mshwari_deposit`, `mshwari_withdraw`, `airtime_other`, `deposit`
 
 **send money to a person** (`MPESA` → `sent` · money out)
 
@@ -393,6 +434,66 @@ TJA0000019 Confirmed . Your M-Shwari Deposit Account balance is Ksh1,300.00 .Tra
 
 ```text
 Dear Customer, M-PESA services will be briefly unavailable tonight from 11:00 PM for planned maintenance.
+```
+
+**save into Ziidi** (`MPESA` → `ziidi_deposit` · money out)
+
+```text
+TJA0000030 Confirmed. Ksh1,000.00 sent to ZIIDI on 12/11/26 at 2:30 PM New M-PESA balance is Ksh50.00. Transaction cost, Ksh0.00.Amount you can transact within the day is 499,000.00. Save with Ziidi on *000#.
+```
+
+**withdraw from Ziidi** (`MPESA` → `ziidi_withdraw` · money in)
+
+```text
+TJA0000031 Confirmed.You have received Ksh600.00 from ZIIDI on 13/11/26 at 9:05 AM New M-PESA balance is Ksh600.50.
+```
+
+**withdraw from Ziidi with its short code** (`MPESA` → `ziidi_withdraw` · money in)
+
+```text
+TJA0000032 Confirmed.You have received Ksh400.00 from ZIIDI 1 900002 on 13/11/26 at 9:20 AM New M-PESA balance is Ksh1,000.50.
+```
+
+**withdraw from M-Shwari into M-Pesa** (`MPESA` → `mshwari_withdraw` · money in)
+
+```text
+TJA0000033 Confirmed.Ksh500.00 transferred from M-Shwari account on 13/11/26 at 10:00 AM. M-Shwari balance is Ksh1,000.00 .M-PESA balance is Ksh1,500.50 .Transaction cost Ksh.0.00
+```
+
+**save into M-Shwari** (`MPESA` → `mshwari_deposit` · money out)
+
+```text
+TJA0000034 Confirmed.Ksh300.00 transferred to M-Shwari account on 13/11/26 at 10:30 AM. M-PESA balance is Ksh1,200.50 .New M-Shwari saving account balance is Ksh1,300.00. Transaction cost Ksh.0.00
+```
+
+**receive a withdrawal from a money market fund** (`MPESA` → `received` · money in)
+
+```text
+TJA0000035 Confirmed.You have received Ksh400.00 from ETICA CAPITAL LTD on 14/11/26 at 11:10 AM New M-PESA balance is Ksh1,500.50.  Separate personal and business funds through Pochi la Biashara on *334#.
+```
+
+**receive from a KCB account** (`MPESA` → `received` · money in)
+
+```text
+TJA0000036 Confirmed.You have received Ksh2,000.00 from KCB 1 522522 on 14/11/26 at 2:15 PM New M-PESA balance is Ksh5,000.50.
+```
+
+**send to an Airtel Money number** (`MPESA` → `airtel_money_sent` · money out)
+
+```text
+TJA0000037 Confirmed. Ksh100.00 sent to AIRTEL MONEY for account 0730000000 on 14/11/26 at 3:00 PM New M-PESA balance is Ksh4,885.50. Transaction cost, Ksh15.00.Amount you can transact within the day is 499,900.00.
+```
+
+**send to Airtel Money with no number printed** (`MPESA` → `airtel_money_sent` · money out)
+
+```text
+TJA0000038 Confirmed. Ksh50.00 sent to AIRTEL MONEY on 14/11/26 at 3:10 PM New M-PESA balance is Ksh4,828.50. Transaction cost, Ksh7.00.
+```
+
+**receive into Pochi la Biashara** (`MPESA` → `pochi_received` · money in)
+
+```text
+TJA0000039 Confirmed.You have received Ksh200.00 from JOHN DOE 0711***000 on 15/11/26 at 8:40 AM New Pochi balance is Ksh1,200.00.
 ```
 
 ## Standard Chartered

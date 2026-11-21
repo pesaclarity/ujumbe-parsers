@@ -1,9 +1,49 @@
 # yaml-language-server: $schema=../../schema/fixtures.schema.json
-# Synthetic messages only. The pack has no rules yet, so each one is
-# expected in the review inbox.
+# Synthetic messages only.
 pack: airtel_money
 samples:
-  - name: a send goes to the review inbox
+  # The twin of the mpesa pack's send to AIRTEL MONEY (TJA0000037).
+  - name: receive money from M-Pesa, with the sender's reference
+    sender: AirtelMoney
+    received_at: '2026-11-14T15:01:00+03:00'
+    body: 'TID:TJA0000040. Received Ksh 100 from JOHN DOE 0711000000 on 14/11/26 15:00. Bal Ksh 220. Sender TID:TJA0000037.'
+    expect:
+      rule: received
+      type: received
+      direction: in
+      amount_minor: 10000
+      receipt: TJA0000040
+      counterparty: JOHN DOE
+      account: TJA0000037
+      time: '2026-11-14T15:01:00+03:00'
+
+  - name: receive money with decimals and no phone number
+    sender: AIRTELMONEY
+    received_at: '2026-11-14T16:00:00+03:00'
+    body: 'TID: TJA0000041 received Ksh 1,500.00 from JANE DOE. New balance Ksh 1,620.00. Sender TID: TJA0000042'
+    expect:
+      rule: received
+      type: received
+      direction: in
+      amount_minor: 150000
+      receipt: TJA0000041
+      counterparty: JANE DOE
+      account: TJA0000042
+      time: '2026-11-14T16:00:00+03:00'
+
+  - name: buy a data bundle
+    sender: AirtelMoney
+    received_at: '2026-11-15T09:00:00+03:00'
+    body: 'TID:TJA0000043. You have bought a 1GB Data Bundle valid for 24 hours worth Ksh 99. Bal Ksh 1,521.00.'
+    expect:
+      rule: bundle
+      type: airtime
+      direction: out
+      amount_minor: 9900
+      receipt: TJA0000043
+      time: '2026-11-15T09:00:00+03:00'
+
+  - name: an unknown alert goes to the review inbox
     sender: AirtelMoney
     body: 'Example alert: Ksh 500.00 sent to JANE DOE 0700000001 on 26/10/2026 at 09:15. Balance Ksh 1,500.00. TID EX0000000001.'
     expect: unmatched
@@ -11,4 +51,9 @@ samples:
   - name: the sender is matched in any case
     sender: AIRTELMONEY
     body: 'Example alert: Ksh 1,000.00 received from JOHN KAMAU 0700000002 on 26/10/2026 at 10:02. Balance Ksh 2,500.00. TID EX0000000002.'
+    expect: unmatched
+
+  - name: a promotion goes to the review inbox
+    sender: AirtelMoney
+    body: 'Get 2GB Data Bundle for Ksh 50 only today! Dial *000# to buy.'
     expect: unmatched

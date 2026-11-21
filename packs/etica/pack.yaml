@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Etica Capital's money market fund. The rule follows a real Etica notice,
+# rewritten as a synthetic sample in fixtures.yaml. The sender ID needs
+# confirming against a real message.
+schema: 1
+id: etica
+name: Etica Capital
+version: 0.1.0
+min_engine: 0.2.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - ETICA
+
+rules:
+  # A withdrawal from the fund paid out to an M-Pesa number. "own_account"
+  # is the fund account it left, "account" and "counterparty" the M-Pesa
+  # number and its holder. "receipt" is the M-Pesa reference, which M-Pesa's
+  # own message for the same money ("You have received ... from ETICA
+  # CAPITAL LTD") also prints, so the app keeps one transfer for both. No
+  # time is printed; the engine uses the time the phone received it.
+  - id: payout
+    type: withdrawal
+    direction: out
+    pattern: '^Dear [^,]+, Your payment of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{2})?) to (?<account>\+?\d{9,12}) - (?<counterparty>.+?) from account (?<own_account>\S+) \([^)]*\) has been processed successfully\.\s*Transaction ref: (?<receipt>[A-Z0-9]{10})\b'

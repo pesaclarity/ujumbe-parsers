@@ -5,23 +5,40 @@
 const bundledPackSources = <String, String>{
   'airtel_money': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
-# Review-only: no public sample of Airtel Money Kenya's wording was found
-# (Uganda and Tanzania samples differ in currency and language). Every
-# message goes to the review inbox, where the reader suggests the fields
-# and the person's answers teach the app the layout. Add rules once real
-# Kenyan wording is known (as synthetic fixtures). Sender confirmed for
-# Kenya: messages arrive from "airtelmoney"; senders compare
-# case-insensitively, so AirtelMoney and AIRTELMONEY match too.
+# The received rule follows real Airtel Money Kenya messages, rewritten as
+# synthetic samples in fixtures.yaml; the bundle rule's wording needs
+# checking against a real message. Anything else goes to the review inbox,
+# where the reader suggests the fields and the person's answers teach the
+# app the layout. Sender confirmed for Kenya: messages arrive from "airtelmoney";
+# senders compare case-insensitively, so AirtelMoney and AIRTELMONEY match
+# too. Messages print no time the rules read; the engine uses the time the
+# phone received them. Balances are not read until their wording is known.
 schema: 1
 id: airtel_money
 name: Airtel Money
-version: 0.1.1
+version: 0.2.0
 min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
   - AirtelMoney
-rules: []
+
+rules:
+  # Money received. "receipt" is Airtel's TID and "account" the sender's
+  # own reference ("Sender TID"), which the sending side's message prints
+  # as its receipt (an M-Pesa send to AIRTEL MONEY, say), so the app can
+  # match the two. "counterparty" is the sender's name as printed.
+  - id: received
+    type: received
+    direction: in
+    pattern: '^TID: ?(?<receipt>[A-Z0-9.]+?)\.?\s+[Rr]eceived Ksh ?(?<amount>[\d,]+(?:\.\d{1,2})?) from (?<counterparty>[A-Z][A-Za-z''-]*(?: [A-Z][A-Za-z''-]*)*).*?Sender TID: ?(?<account>[A-Z0-9.]*[A-Z0-9])'
+
+  # A data or voice bundle paid for from the wallet. The amount is the first
+  # Ksh amount before any balance.
+  - id: bundle
+    type: airtime
+    direction: out
+    pattern: '^TID: ?(?<receipt>[A-Z0-9.]+?)\.?\s+(?=.*\b[Bb]undle)(?:(?![Bb]al).)*?Ksh ?(?<amount>[\d,]+(?:\.\d{1,2})?)'
 ''',
   'co_op_bank': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -102,6 +119,33 @@ rules:
     direction: in
     time_format: "d MMM yyyy 'at' HH:mm"
     pattern: '^You have received (?<amount>[\d,]+(?:\.\d{1,2})?) (?<currency>[A-Z]{3}) from (?<counterparty>.+?)(?: [\d*]{8,15})? to your Equity account (?<own_account>[\d*]+)\.\s*Ref\.\s*(?<receipt>[A-Z0-9]+) on (?<time>\d{1,2} [A-Z][a-z]{2} \d{4} at \d{2}:\d{2})'
+''',
+  'etica': r'''
+# yaml-language-server: $schema=../../schema/pack.schema.json
+# Etica Capital's money market fund. The rule follows a real Etica notice,
+# rewritten as a synthetic sample in fixtures.yaml. The sender ID needs
+# confirming against a real message.
+schema: 1
+id: etica
+name: Etica Capital
+version: 0.1.0
+min_engine: 0.2.0
+currency: KES
+utc_offset: "+03:00"
+senders:
+  - ETICA
+
+rules:
+  # A withdrawal from the fund paid out to an M-Pesa number. "own_account"
+  # is the fund account it left, "account" and "counterparty" the M-Pesa
+  # number and its holder. "receipt" is the M-Pesa reference, which M-Pesa's
+  # own message for the same money ("You have received ... from ETICA
+  # CAPITAL LTD") also prints, so the app keeps one transfer for both. No
+  # time is printed; the engine uses the time the phone received it.
+  - id: payout
+    type: withdrawal
+    direction: out
+    pattern: '^Dear [^,]+, Your payment of (?<currency>[A-Z]{3}) ?(?<amount>[\d,]+(?:\.\d{2})?) to (?<account>\+?\d{9,12}) - (?<counterparty>.+?) from account (?<own_account>\S+) \([^)]*\) has been processed successfully\.\s*Transaction ref: (?<receipt>[A-Z0-9]{10})\b'
 ''',
   'im_bank': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
@@ -271,7 +315,7 @@ rules: []
 schema: 1
 id: mpesa
 name: M-Pesa
-version: 0.3.1
+version: 0.4.0
 min_engine: 0.3.0
 currency: KES
 utc_offset: "+03:00"
@@ -282,6 +326,21 @@ time_format: "d/M/yy 'at' h:mm a"
 # Rules are tried in order and the first match wins, so more specific
 # shapes (paybill, with "for account") come before general ones (sent).
 rules:
+  # Saving into Ziidi, Safaricom's money market fund, typed as the statement
+  # pack types unit trust investments. Before "sent", which would also read
+  # it. The app records the other side on the Ziidi account.
+  - id: ziidi_deposit
+    type: paybill
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>ZIIDI(?: [A-Z]+)*?)(?: for account (?<account>\S+))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+
+  # Sent to an Airtel Money wallet. "account" is the Airtel number when
+  # printed. Before "paybill" and "sent", which would also read it.
+  - id: airtel_money_sent
+    type: sent
+    direction: out
+    pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>AIRTEL MONEY)(?: for account)?(?: (?<account>\d{9,12}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
+
   - id: paybill
     type: paybill
     direction: out
@@ -292,10 +351,24 @@ rules:
     direction: out
     pattern: '^(?<receipt>[A-Z0-9]{10}) Confirmed\. Ksh(?<amount>[\d,]+\.\d{2}) sent to (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}))? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.\s*Transaction cost, Ksh(?<fee>[\d,]+\.\d{2})\.'
 
+  # Taking money out of Ziidi back into M-Pesa. Before "received".
+  - id: ziidi_withdraw
+    type: received
+    direction: in
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>ZIIDI(?: [A-Z0-9]+)*?)(?: (?<account>\d{5,7}))?\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+
   - id: received
     type: received
     direction: in
     pattern: '^(?:Congratulations! )?(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}|\d{5,7}))?\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New M-PESA balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
+
+  # Money paid into Pochi la Biashara, the business wallet kept apart from
+  # the M-PESA balance. "own_account" is "Pochi" as printed, so the app
+  # records it, and its balance, on the Pochi account rather than M-Pesa's.
+  - id: pochi_received
+    type: received
+    direction: in
+    pattern: '^(?<receipt>[A-Z0-9]{10}) [Cc]onfirmed\.\s*You have received Ksh(?<amount>[\d,]+\.\d{2}) from (?<counterparty>.+?)(?: (?<account>0\d{2,3}[\d*]{5,7}|\d{5,7}))?\.? on (?<time>\d{1,2}/\d{1,2}/\d{2} at \d{1,2}:\d{2} [AP]M)\.?\s*New (?<own_account>Pochi) balance is Ksh(?<balance>[\d,]+\.\d{2})\.'
 
   - id: till
     type: till

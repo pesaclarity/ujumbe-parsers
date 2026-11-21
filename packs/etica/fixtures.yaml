@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/fixtures.schema.json
+# Synthetic messages only.
+pack: etica
+samples:
+  - name: withdraw from the fund to M-Pesa
+    sender: ETICA
+    received_at: '2026-11-14T11:11:00+03:00'
+    body: 'Dear esteemed client, Your payment of KES 400.00 to 0700000000 - JANE DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035'
+    expect:
+      rule: payout
+      type: withdrawal
+      direction: out
+      amount_minor: 40000
+      currency: KES
+      receipt: TJA0000035
+      counterparty: JANE DOE
+      account: '0700000000'
+      own_account: 000000M
+      time: '2026-11-14T11:11:00+03:00'
+
+  - name: a statement notice goes to the review inbox
+    sender: ETICA
+    body: 'Dear esteemed client, your monthly statement for account 000000M is ready. Log in to view it.'
+    expect: unmatched
