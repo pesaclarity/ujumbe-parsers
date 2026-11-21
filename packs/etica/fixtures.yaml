@@ -3,7 +3,7 @@
 pack: etica
 samples:
   - name: withdraw from the fund to M-Pesa
-    sender: ETICA
+    sender: ETICALTD
     received_at: '2026-11-14T11:11:00+03:00'
     body: "Dear esteemed client,\nYour payment of KES 400.00 to 0700000000 - JANE WANJIRU DOE  from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000035"
     expect:
@@ -19,7 +19,7 @@ samples:
       time: '2026-11-14T11:11:00+03:00'
 
   - name: withdraw from the fund, on one line
-    sender: ETICACAPITAL
+    sender: ETICALTD
     received_at: '2026-11-15T10:00:00+03:00'
     body: 'Dear esteemed client, Your payment of KES 1,000.00 to 0711000000 - JOHN DOE from account 000000M (EMMF - KES) has been processed successfully. Transaction ref: TJA0000047'
     expect:
@@ -35,6 +35,6 @@ samples:
       time: '2026-11-15T10:00:00+03:00'
 
   - name: a statement notice goes to the review inbox
-    sender: ETICA
+    sender: ETICALTD
     body: 'Dear esteemed client, your monthly statement for account 000000M is ready. Log in to view it.'
     expect: unmatched

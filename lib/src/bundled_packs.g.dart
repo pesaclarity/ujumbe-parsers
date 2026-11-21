@@ -124,8 +124,8 @@ rules:
   'etica': r'''
 # yaml-language-server: $schema=../../schema/pack.schema.json
 # Etica Capital's money market fund. The rule follows a real Etica notice,
-# rewritten as a synthetic sample in fixtures.yaml. The sender ID is not
-# known yet: these are likely spellings, to be narrowed to the real one.
+# rewritten as a synthetic sample in fixtures.yaml. Messages arrive
+# from ETICALTD (confirmed by the owner).
 schema: 1
 id: etica
 name: Etica Capital
@@ -134,9 +134,7 @@ min_engine: 0.2.0
 currency: KES
 utc_offset: "+03:00"
 senders:
-  - ETICA
-  - ETICACAPITAL
-  - ETICA_CAP
+  - ETICALTD
 
 rules:
   # A withdrawal from the fund paid out to an M-Pesa number. "own_account"

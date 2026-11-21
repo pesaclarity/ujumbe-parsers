@@ -17,7 +17,7 @@ void main() {
 
   test('an Etica payout and its M-Pesa credit share the M-Pesa receipt', () {
     final etica = parse(
-      'ETICA',
+      'ETICALTD',
       'Dear esteemed client,\nYour payment of KES 400.00 to 0700000000 - '
           'JANE WANJIRU DOE  from account 000000M (EMMF - KES) has been processed '
           'successfully. Transaction ref: TJA0000035',
