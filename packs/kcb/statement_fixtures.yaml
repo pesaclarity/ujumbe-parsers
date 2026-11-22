@@ -1,0 +1,320 @@
+# yaml-language-server: $schema=../../schema/statement-fixtures.schema.json
+# Synthetic statements only: JANE DOE and JOHN DOE, made-up account
+# numbers, references and amounts. Columns are left edges, or right edges
+# after ">". Cells are centred in their rows, as KCB prints them: wrapped
+# text sits above and below the date, and empty lines part the rows.
+pack: kcb_statement
+statements:
+  - name: four pages, rows cut by page breaks, charges, a reversal and a summary page
+    columns: [20, 80, 140, 230, 370, ">500", ">570", ">650"]
+    pages:
+      -
+        - "Statement Date"
+        - "07/Oct/2026"
+        - "Statement Period"
+        - "2026-09-01 -"
+        - "2026-09-30"
+        - "Transactional Account PAYG Statement"
+        - "Branch: KCB EXAMPLE BRANCH"
+        - "Account Details"
+        - "Customer Name: JANE DOE"
+        - "Account Number: 1234567890"
+        - "Customer Address: P.O. BOX 00000 NAIROBI"
+        - "Statement Overview"
+        - "Balance at Period Start: KES 50,000.00"
+        - "Balance at Period End: KES 52,465.00"
+        - ""
+        - ["TXN Date", "Value Date", "Transaction Type", "Transaction Details", "Reference", "Money Out", "Money In", "Running Balance"]
+        - ["", "", "", "BALANCE FWD", "", "", "", "50,000.00"]
+        - ""
+        - ["", "", "", "Received from KES INWARD", "", "", "", ""]
+        - ["", "", "", "CLEARING ACCOUNT bank", "", "", "", ""]
+        - ["01/Sep/2026", "01/Sep/2026", "Direct Credits", "purpose EXAMPLE EMPLOYER", "FT26244AAA01", "", "20,000.00", "70,000.00"]
+        - ["", "", "", "LTD", "", "", "", ""]
+        - ""
+        - ["01/Sep/2026", "01/Sep/2026", "EFT Charge", "EFT Charge", "FT26244AAA01", "-50.00", "", "69,950.00"]
+        - ""
+        - ["", "", "Mobile Money", "254700000001-JANE", "", "", "", ""]
+        - ["01/Sep/2026", "01/Sep/2026", "", "", "FT26244AAA02", "-1,500.00", "", "68,450.00"]
+        - ["", "", "Transfer", "DOE Mobile Money", "", "", "", ""]
+        - ""
+        - ["", "", "", "254700000001-JANE", "", "", "", ""]
+        - ["01/Sep/2026", "01/Sep/2026", "Transfer Charge", "", "FT26244AAA02", "-30.00", "", "68,420.00"]
+        - ["", "", "", "DOE Mobile Money", "", "", "", ""]
+        - ""
+        - ["", "", "Pesalink", "JOHN DOE", "", "", "", ""]
+        - ["02/Sep/2026", "02/Sep/2026", "Outgoing", "0123456789-EXAMPLE BANK", "FT26245AAA03", "-5,000.00", "", "63,420.00"]
+        - ""
+        - ["02/Sep/2026", "02/Sep/2026", "Pesalink Charge", "Pesalink Charge", "FT26245AAA03", "-45.00", "", "63,375.00"]
+        - ""
+        - ["", "", "Vooma Loan", "", "", "", "", ""]
+        - ["02/Sep/2026", "02/Sep/2026", "", "MobileLoan", "FT26245AAA04", "", "3,000.00", "66,375.00"]
+        - ["", "", "Disbursement", "", "", "", "", ""]
+        - ""
+        - ["03/Sep/2026", "03/Sep/2026", "POS Txn", "4000000000000000 EXAMPLE", "FT26246AAA05", "-850.00", "", "65,525.00"]
+        - ["", "", "", "SUPERMARKET", "", "", "", ""]
+        - ""
+        - ["", "", "", "Goal Top Up JANE", "", "", "", ""]
+        - ["03/Sep/2026", "03/Sep/2026", "Transfer", "DOE", "FT26246AAA06", "-2,000.00", "", "63,525.00"]
+        - ""
+        - ["03/Sep/2026", "03/Sep/2026", "Transfer Charge", "Goal Top Up", "FT26246AAA06", "-10.00", "", "63,515.00"]
+        - ""
+        - ["", "", "Mobile Money", "254711111111-JOHN", "", "", "", ""]
+        - ""
+        - "Showing page 1 of 4"
+        - "This statement is synthetic test data, not a real record."
+      -
+        - "Statement Date"
+        - "07/Oct/2026"
+        - "Statement Period"
+        - "2026-09-01 -"
+        - "2026-09-30"
+        - "Transactional Account PAYG Statement"
+        - "Branch: KCB EXAMPLE BRANCH"
+        - "Account Details"
+        - "Customer Name: JANE DOE"
+        - "Account Number: 1234567890"
+        - "Customer Address: P.O. BOX 00000 NAIROBI"
+        - "Statement Overview"
+        - "Balance at Period Start: KES 50,000.00"
+        - "Balance at Period End: KES 52,465.00"
+        - ""
+        - ["TXN Date", "Value Date", "Transaction Type", "Transaction Details", "Reference", "Money Out", "Money In", "Running Balance"]
+        - ["03/Sep/2026", "03/Sep/2026", "", "", "FT26246AAA07", "-700.00", "", "62,815.00"]
+        - ["", "", "Transfer", "DOE Mobile Money", "", "", "", ""]
+        - ""
+        - ["", "", "Mobile Money", "Mobile Money", "", "", "", ""]
+        - ["04/Sep/2026", "04/Sep/2026", "", "", "FT26247AAA08", "-400.00", "", "62,415.00"]
+        - ["", "", "Transfer", "Mobile Money", "", "", "", ""]
+        - ""
+        - ["", "", "Mobile Money", "Mobile Money", "", "", "", ""]
+        - ["04/Sep/2026", "04/Sep/2026", "", "", "FT26247AAA08", "", "400.00", "62,815.00"]
+        - ["", "", "Transfer", "Mobile Money", "", "", "", ""]
+        - ""
+        - ["", "", "Vooma Loan", "", "", "", "", ""]
+        - ["04/Sep/2026", "04/Sep/2026", "Interest Loan", "MobileLoan", "FT26247AAA09", "-3,100.00", "", "59,715.00"]
+        - ["", "", "Recovery", "", "", "", "", ""]
+        - ""
+        - ["", "", "", "Received from TJA0000001", "", "", "", ""]
+        - ["04/Sep/2026", "04/Sep/2026", "Mobi", "254700000002 JANE DOE", "FT26247AAA10", "", "1,000.00", "60,715.00"]
+        - ["", "", "", "123456", "", "", "", ""]
+        - ""
+        - ["04/Sep/2026", "04/Sep/2026", "Mobi", "Received EXAMPLE", "FT26247AAA11", "", "500.00", "61,215.00"]
+        - ""
+        - ["", "", "Outward SWIFT", "Payment to JOHN DOE -", "", "", "", ""]
+        - ["05/Sep/2026", "05/Sep/2026", "", "0123456789012 - EXAMPLE", "FT26248AAA12", "-10,000.00", "", "51,215.00"]
+        - ""
+        - "Showing page 2 of 4"
+        - "This statement is synthetic test data, not a real record."
+      -
+        - "Statement Date"
+        - "07/Oct/2026"
+        - "Statement Period"
+        - "2026-09-01 -"
+        - "2026-09-30"
+        - "Transactional Account PAYG Statement"
+        - "Branch: KCB EXAMPLE BRANCH"
+        - "Account Details"
+        - "Customer Name: JANE DOE"
+        - "Account Number: 1234567890"
+        - "Customer Address: P.O. BOX 00000 NAIROBI"
+        - "Statement Overview"
+        - "Balance at Period Start: KES 50,000.00"
+        - "Balance at Period End: KES 52,465.00"
+        - ""
+        - ["TXN Date", "Value Date", "Transaction Type", "Transaction Details", "Reference", "Money Out", "Money In", "Running Balance"]
+        - ["", "", "Payment", "BANK Account - 01AB", "", "", "", ""]
+        - ""
+        - ["05/Sep/2026", "05/Sep/2026", "SWIFT Charge", "SWIFT Charge", "FT26248AAA12", "-1,000.00", "", "50,215.00"]
+        - ""
+        - ["05/Sep/2026", "05/Sep/2026", "Transfer", "transfer from JOHN DOE", "FT26248AAA13", "", "2,500.00", "52,715.00"]
+        - ""
+        - ["06/Sep/2026", "06/Sep/2026", "Direct Credits", "EXAMPLE REFUND", "FT26249AAA14", "", "300.00", "53,015.00"]
+        - ""
+        - ["06/Sep/2026", "06/Sep/2026", "ATM Card Fee", "Pay card fee", "FT26249AAA15", "-100.00", "", "52,915.00"]
+        - ""
+        - ["", "", "Outward SWIFT", "", "", "", "", ""]
+        - ["06/Sep/2026", "06/Sep/2026", "Payment", "SWIFT EXAMPLE", "FT26249AAA16", "-200.00", "", "52,715.00"]
+        - ""
+        - ["06/Sep/2026", "06/Sep/2026", "Vooma Wallet", "254700000001-JANE DOE", "FT26249AAA17", "-250.00", "", "52,465.00"]
+        - ["", "", "Top Up", "", "", "", "", ""]
+        - ""
+        - ""
+        - "Showing page 3 of 4"
+        - "This statement is synthetic test data, not a real record."
+      -
+        - "Statement Date"
+        - "07/Oct/2026"
+        - "Statement Period"
+        - "2026-09-01 -"
+        - "2026-09-30"
+        - "Transactional Account PAYG Statement"
+        - "Branch: KCB EXAMPLE BRANCH"
+        - "Account Details"
+        - "Customer Name: JANE DOE"
+        - "Account Number: 1234567890"
+        - "Customer Address: P.O. BOX 00000 NAIROBI"
+        - "Statement Overview"
+        - "Balance at Period Start: KES 50,000.00"
+        - "Balance at Period End: KES 52,465.00"
+        - ""
+        - "Balance at Period End KES 52,465.00"
+        - "Number of Debits KES 1.00"
+        - "Number of Credits KES 2.00"
+        - ""
+        - "Showing page 4 of 4"
+        - "This statement is synthetic test data, not a real record."
+    expect:
+      period: ['2026-09-01', '2026-09-30']
+      opening_balance_minor: 5000000
+      closing_balance_minor: 5246500
+      reconciles: true
+      unread_lines: 0
+      transactions:
+        - rule: "statement_direct_credit"
+          type: "received"
+          direction: "in"
+          amount_minor: 2000000
+          fee_minor: 5000
+          balance_minor: 6995000
+          receipt: "FT26244AAA01"
+          counterparty: "EXAMPLE EMPLOYER LTD"
+          time: "2026-09-01T00:00:00+03:00"
+        - rule: "statement_mobile_money"
+          type: "sent"
+          direction: "out"
+          amount_minor: 150000
+          fee_minor: 3000
+          balance_minor: 6842000
+          receipt: "FT26244AAA02"
+          counterparty: "JANE DOE"
+          account: "254700000001"
+          time: "2026-09-01T00:00:00+03:00"
+        - rule: "statement_pesalink"
+          type: "sent"
+          direction: "out"
+          amount_minor: 500000
+          fee_minor: 4500
+          balance_minor: 6337500
+          receipt: "FT26245AAA03"
+          counterparty: "JOHN DOE"
+          time: "2026-09-02T00:00:00+03:00"
+        - rule: "statement_mobile_loan"
+          type: "bank"
+          direction: "in"
+          amount_minor: 300000
+          balance_minor: 6637500
+          receipt: "FT26245AAA04"
+          time: "2026-09-02T00:00:00+03:00"
+        - rule: "statement_card_payment"
+          type: "bank"
+          direction: "out"
+          amount_minor: 85000
+          balance_minor: 6552500
+          receipt: "FT26246AAA05"
+          counterparty: "EXAMPLE SUPERMARKET"
+          time: "2026-09-03T00:00:00+03:00"
+        - rule: "statement_transfer"
+          type: "sent"
+          direction: "out"
+          amount_minor: 200000
+          fee_minor: 1000
+          balance_minor: 6351500
+          receipt: "FT26246AAA06"
+          counterparty: "JANE DOE"
+          time: "2026-09-03T00:00:00+03:00"
+        - rule: "statement_mobile_money"
+          type: "sent"
+          direction: "out"
+          amount_minor: 70000
+          balance_minor: 6281500
+          receipt: "FT26246AAA07"
+          counterparty: "JOHN DOE"
+          account: "254711111111"
+          time: "2026-09-03T00:00:00+03:00"
+        - rule: "statement_mobile_money_unnamed"
+          type: "sent"
+          direction: "out"
+          amount_minor: 40000
+          balance_minor: 6241500
+          receipt: "FT26247AAA08"
+          time: "2026-09-04T00:00:00+03:00"
+        - rule: "statement_reversal"
+          type: "reversal"
+          direction: "in"
+          amount_minor: 40000
+          balance_minor: 6281500
+          receipt: null
+          account: "FT26247AAA08"
+          time: "2026-09-04T00:00:00+03:00"
+        - rule: "statement_loan_repayment"
+          type: "loan_repayment"
+          direction: "out"
+          amount_minor: 310000
+          balance_minor: 5971500
+          receipt: "FT26247AAA09"
+          time: "2026-09-04T00:00:00+03:00"
+        - rule: "statement_mobi_received"
+          type: "received"
+          direction: "in"
+          amount_minor: 100000
+          balance_minor: 6071500
+          receipt: "FT26247AAA10"
+          counterparty: "JANE DOE"
+          account: "TJA0000001"
+          time: "2026-09-04T00:00:00+03:00"
+        - rule: "statement_mobi"
+          type: "bank"
+          direction: "in"
+          amount_minor: 50000
+          balance_minor: 6121500
+          receipt: "FT26247AAA11"
+          time: "2026-09-04T00:00:00+03:00"
+        - rule: "statement_swift"
+          type: "sent"
+          direction: "out"
+          amount_minor: 1000000
+          fee_minor: 100000
+          balance_minor: 5021500
+          receipt: "FT26248AAA12"
+          counterparty: "JOHN DOE"
+          account: "0123456789012"
+          time: "2026-09-05T00:00:00+03:00"
+        - rule: "statement_transfer_in"
+          type: "received"
+          direction: "in"
+          amount_minor: 250000
+          balance_minor: 5271500
+          receipt: "FT26248AAA13"
+          counterparty: "JOHN DOE"
+          time: "2026-09-05T00:00:00+03:00"
+        - rule: "statement_direct_credit_unnamed"
+          type: "received"
+          direction: "in"
+          amount_minor: 30000
+          balance_minor: 5301500
+          receipt: "FT26249AAA14"
+          time: "2026-09-06T00:00:00+03:00"
+        - rule: "statement_charge"
+          type: "bank"
+          direction: "out"
+          amount_minor: 10000
+          balance_minor: 5291500
+          receipt: "FT26249AAA15"
+          time: "2026-09-06T00:00:00+03:00"
+        - rule: "statement_swift_unnamed"
+          type: "sent"
+          direction: "out"
+          amount_minor: 20000
+          balance_minor: 5271500
+          receipt: "FT26249AAA16"
+          time: "2026-09-06T00:00:00+03:00"
+        - rule: "statement_vooma_top_up"
+          type: "sent"
+          direction: "out"
+          amount_minor: 25000
+          balance_minor: 5246500
+          receipt: "FT26249AAA17"
+          counterparty: "JANE DOE"
+          account: "254700000001"
+          time: "2026-09-06T00:00:00+03:00"

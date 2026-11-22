@@ -66,6 +66,10 @@ class MessageTimeFormat {
   final RegExp _regex;
   final List<String> _fields;
 
+  /// Whether the pattern reads a time of day (an hour), not only a date.
+  bool get hasTime =>
+      _fields.any((f) => f.startsWith('H') || f.startsWith('h'));
+
   /// Parses [text] as wall-clock time at [utcOffset] and returns it in UTC.
   ///
   /// Returns `null` when [text] does not fit the pattern or names an

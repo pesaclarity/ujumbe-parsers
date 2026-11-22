@@ -2,7 +2,7 @@
 ///
 /// Packs and the pack index name the oldest engine that can read them; a
 /// phone compares that against this value before using a downloaded pack.
-const engineVersion = '0.4.0'; // x-release-please-version
+const engineVersion = '0.5.0'; // x-release-please-version
 
 // SemVer 2.0: no leading zeros in numbers or numeric pre-release
 // identifiers, and no empty identifiers.

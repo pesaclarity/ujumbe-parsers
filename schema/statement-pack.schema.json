@@ -86,6 +86,8 @@
               "date",
               "time",
               "description",
+              "kind",
+              "value_date",
               "status",
               "money_in",
               "money_out",
@@ -129,6 +131,8 @@
         "date",
         "time",
         "description",
+        "kind",
+        "value_date",
         "status",
         "money_in",
         "money_out",
@@ -157,17 +161,55 @@
         "description": "A Dart regular expression."
       }
     },
+    "wrap": {
+      "enum": [
+        "below",
+        "centered"
+      ],
+      "description": "centered: cells are centred in their rows, so wrapped text sits above and below the line that starts a row (needs min_engine 0.5.0)."
+    },
+    "table_end": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A Dart regular expression."
+      },
+      "description": "A matching line ends the table on its page, such as a footer (needs min_engine 0.5.0)."
+    },
+    "header_on_every_page": {
+      "type": "boolean",
+      "description": "Pages without the header row are not part of the table (needs min_engine 0.5.0)."
+    },
+    "max_word_height": {
+      "type": "number",
+      "exclusiveMinimum": 1,
+      "description": "Drop words taller than this many times the page's median word height (needs min_engine 0.5.0)."
+    },
+    "opening_balance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Captures the summary's opening balance as an amount group (needs min_engine 0.5.0)."
+    },
+    "closing_balance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Captures the summary's closing balance as an amount group (needs min_engine 0.5.0)."
+    },
     "fees": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "description"
-      ],
+      "minProperties": 1,
       "properties": {
         "description": {
           "type": "string",
           "minLength": 1,
-          "description": "A Dart regular expression."
+          "description": "Matches a charge row's description."
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Matches a charge row's kind column (needs min_engine 0.5.0)."
         }
       }
     },
@@ -200,8 +242,7 @@
         "additionalProperties": false,
         "required": [
           "id",
-          "type",
-          "pattern"
+          "type"
         ],
         "properties": {
           "id": {
@@ -218,6 +259,7 @@
               "airtime",
               "fuliza",
               "fuliza_repayment",
+              "loan_repayment",
               "reversal",
               "bank"
             ]
@@ -229,8 +271,32 @@
           },
           "ignore_case": {
             "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Matches the kind column (needs min_engine 0.5.0)."
+          },
+          "direction": {
+            "enum": [
+              "in",
+              "out"
+            ],
+            "description": "Only rows moving money this way (needs min_engine 0.5.0)."
           }
-        }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "pattern"
+            ]
+          },
+          {
+            "required": [
+              "kind"
+            ]
+          }
+        ]
       }
     },
     "password_hint": {
