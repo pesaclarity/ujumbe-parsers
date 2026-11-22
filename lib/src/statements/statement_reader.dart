@@ -17,7 +17,12 @@ class StatementLine {
     this.reference,
     this.status,
     this.balanceMinor,
+    this.kind,
   });
+
+  /// The transaction type as printed in its own column, if the statement
+  /// has one.
+  final String? kind;
 
   /// When it happened, in UTC.
   final DateTime time;
@@ -83,7 +88,21 @@ class ParsedStatement {
     required this.closingBalanceMinor,
     required this.balanceBreaks,
     required this.unreadLines,
+    this.statedOpeningBalanceMinor,
+    this.statedClosingBalanceMinor,
   });
+
+  /// The opening and closing balances the statement's summary prints, when
+  /// its pack reads them.
+  final int? statedOpeningBalanceMinor, statedClosingBalanceMinor;
+
+  /// Whether the balances the summary prints, if read, are the ones the
+  /// rows start from and end at.
+  bool get matchesSummary =>
+      (statedOpeningBalanceMinor == null ||
+          statedOpeningBalanceMinor == openingBalanceMinor) &&
+      (statedClosingBalanceMinor == null ||
+          statedClosingBalanceMinor == closingBalanceMinor);
 
   /// The pack that read it.
   final StatementPack pack;
@@ -110,8 +129,10 @@ class ParsedStatement {
   /// Rows that could not be read. Hold them for review, then discard them.
   final List<String> unreadLines;
 
-  /// Whether every row was read and every balance follows from the last.
-  bool get reconciles => balanceBreaks.isEmpty && unreadLines.isEmpty;
+  /// Whether every row was read, every balance follows from the last, and
+  /// the first and last balances are the ones the summary prints.
+  bool get reconciles =>
+      balanceBreaks.isEmpty && unreadLines.isEmpty && matchesSummary;
 }
 
 /// Picks the pack whose `detect` patterns match the first page, or null.
@@ -138,7 +159,9 @@ class StatementReader {
   /// Reads [pages], the statement's pages in order.
   ParsedStatement read(List<StatementPage> pages) {
     final table = readTable(pages, pack);
-    final (periodStart, periodEnd) = _period(table.outside);
+    // Joined, so a period or balance printed over several lines is found.
+    final outside = table.outside.join('\n');
+    final (periodStart, periodEnd) = _period(outside);
 
     var lines = <StatementLine>[];
     final unread = <String>[];
@@ -193,7 +216,16 @@ class StatementReader {
       closingBalanceMinor: last?.balanceMinor,
       balanceBreaks: List.unmodifiable(breaks),
       unreadLines: List.unmodifiable(unread),
+      statedOpeningBalanceMinor: _stated(pack.openingBalance, outside),
+      statedClosingBalanceMinor: _stated(pack.closingBalance, outside),
     );
+  }
+
+  static int? _stated(RegExp? pattern, String outside) {
+    final m = pattern?.firstMatch(outside);
+    if (m == null) return null;
+    final money = _money(m.namedGroup('amount')!);
+    return money == null || !money.$2 ? null : money.$1;
   }
 
   /// Puts rows that share a time in the order their balances follow.
@@ -271,13 +303,11 @@ class StatementReader {
     return best;
   }
 
-  (DateTime?, DateTime?) _period(List<String> outside) {
+  (DateTime?, DateTime?) _period(String outside) {
     final pattern = pack.period;
     final format = pack.periodFormat;
     if (pattern == null || format == null) return (null, null);
-    for (final text in outside) {
-      final m = pattern.firstMatch(text);
-      if (m == null) continue;
+    for (final m in pattern.allMatches(outside)) {
       // Period dates are calendar days, so they stay at midnight UTC.
       final start = format.parse(
         m.namedGroup('start')!,
@@ -338,7 +368,9 @@ class StatementReader {
 
     final reference = row[StatementColumnKey.reference];
     final status = row[StatementColumnKey.status];
+    final kind = row[StatementColumnKey.kind];
     return StatementLine(
+      kind: kind.isEmpty ? null : kind,
       time: time,
       reference: reference.isEmpty ? null : reference.toUpperCase(),
       description: row[StatementColumnKey.description],
@@ -372,9 +404,12 @@ class StatementReader {
     return pattern.hasMatch(line.status ?? '');
   }
 
-  bool _isCharge(StatementLine line) =>
-      line.moneyOutMinor > 0 &&
-      (pack.fees?.description.hasMatch(line.description) ?? false);
+  bool _isCharge(StatementLine line) {
+    final fees = pack.fees;
+    if (fees == null || line.moneyOutMinor <= 0) return false;
+    return (fees.description?.hasMatch(line.description) ?? true) &&
+        (fees.kind?.hasMatch(line.kind ?? '') ?? true);
+  }
 
   List<ParsedTransaction> _transactions(List<StatementLine> completed) {
     final byReference = <String, List<StatementLine>>{};
@@ -382,21 +417,27 @@ class StatementReader {
       final ref = line.reference;
       if (ref != null) (byReference[ref] ??= []).add(line);
     }
+    final reversals = _reversals(byReference.values);
+    final reversed = reversals.values.toSet();
+    bool isFee(StatementLine l) => _isCharge(l) && !reversed.contains(l);
 
     final result = <ParsedTransaction>[];
     for (final line in completed) {
       final group = line.reference == null
           ? [line]
           : byReference[line.reference]!;
-      final charges = group.where(_isCharge).toList();
-      final payments = group.where((l) => !_isCharge(l)).toList();
-      if (_isCharge(line) && payments.isNotEmpty) continue;
+      final charges = group.where(isFee).toList();
+      final payments = group
+          .where((l) => !isFee(l) && !reversals.containsKey(l))
+          .toList();
+      if (isFee(line) && payments.isNotEmpty) continue;
 
       int? fee;
       var balance = line.balanceMinor;
       // Fold charge rows into the payment that shares their reference. With
       // several rows on one reference (an overdraft draw and the payment it
-      // funds), the first outgoing one takes the fee.
+      // funds), the first outgoing one takes the fee. A charge the bank gave
+      // back stays apart, as does the row giving it back.
       final payer =
           payments.where((l) => l.moneyOutMinor > 0).firstOrNull ??
           payments.firstOrNull;
@@ -405,7 +446,10 @@ class StatementReader {
         balance = group.last.balanceMinor;
       }
 
-      final (ruleId, type, counterparty, account) = _classify(line);
+      final undone = reversals[line];
+      final (ruleId, type, counterparty, account) = undone != null
+          ? ('reversal', TransactionType.reversal, null, line.reference)
+          : _classify(line);
       result.add(
         ParsedTransaction(
           packId: pack.institution,
@@ -422,7 +466,9 @@ class StatementReader {
           rawHash: line.rawHash,
           feeMinor: fee,
           balanceMinor: balance,
-          receipt: line.reference,
+          // The reversal prints the reference of what it undoes, which is
+          // kept as its account, as for a reversal message.
+          receipt: undone != null ? null : line.reference,
           counterparty: counterparty,
           account: account,
         ),
@@ -431,13 +477,51 @@ class StatementReader {
     return result;
   }
 
+  /// Rows that undo an earlier row printed with the same reference: the
+  /// same type (or description, without a type column) and amount, the
+  /// other way. Maps each such row to the row it undoes.
+  static Map<StatementLine, StatementLine> _reversals(
+    Iterable<List<StatementLine>> groups,
+  ) {
+    final result = <StatementLine, StatementLine>{};
+    for (final group in groups) {
+      if (group.length < 2) continue;
+      final undone = <StatementLine>{};
+      for (var i = 1; i < group.length; i++) {
+        final later = group[i];
+        for (final earlier in group.take(i)) {
+          if (undone.contains(earlier) || result.containsKey(earlier)) continue;
+          final sameKind = later.kind != null
+              ? later.kind == earlier.kind
+              : later.description == earlier.description;
+          if (sameKind &&
+              later.netMinor != 0 &&
+              later.netMinor == -earlier.netMinor) {
+            result[later] = earlier;
+            undone.add(earlier);
+            break;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
   (String, TransactionType, String?, String?) _classify(StatementLine line) {
     if (_isCharge(line)) return ('charge', TransactionType.bank, null, null);
     for (final rule in pack.rules) {
-      final m = rule.pattern.firstMatch(line.description);
-      if (m == null) continue;
+      if (rule.kind != null && !rule.kind!.hasMatch(line.kind ?? '')) {
+        continue;
+      }
+      final direction = line.netMinor >= 0
+          ? Direction.incoming
+          : Direction.outgoing;
+      if (rule.direction != null && rule.direction != direction) continue;
+      final pattern = rule.pattern;
+      final m = pattern?.firstMatch(line.description);
+      if (pattern != null && m == null) continue;
       String? group(String name) {
-        if (!m.groupNames.contains(name)) return null;
+        if (m == null || !m.groupNames.contains(name)) return null;
         final value = m.namedGroup(name)?.trim();
         return value == null || value.isEmpty ? null : value;
       }

@@ -478,6 +478,150 @@ rules:
 
 /// The YAML source of every statement pack in `packs/*/statement.yaml`, by id.
 const bundledStatementPackSources = <String, String>{
+  'kcb_statement': r'''
+# yaml-language-server: $schema=../../schema/statement-pack.schema.json
+# The KCB transactional account statement (PDF). Column names and detail
+# wording follow the real layout; fixtures are synthetic.
+schema: 1
+id: kcb_statement
+institution: kcb
+name: KCB statement
+version: 0.1.0
+min_engine: 0.5.0
+currency: KES
+utc_offset: "+03:00"
+
+detect:
+  - '^\s*Transactional Account \S+ Statement\b'
+  - 'TXN Date\s+Value Date\s+Transaction Type\s+Transaction Details'
+
+# Printed at the top right of every page, over three lines.
+period: 'Statement Period:?\s+(?<start>\d{4}-\d{2}-\d{2})\s*-\s*(?<end>\d{4}-\d{2}-\d{2})'
+period_format: "yyyy-MM-dd"
+opening_balance: 'Balance at Period Start:?\s*KES\s*(?<amount>-?[\d,]+\.\d{2})'
+closing_balance: 'Balance at Period End:?\s*KES\s*(?<amount>-?[\d,]+\.\d{2})'
+
+columns:
+  - key: date
+    header: '^TXN Date$'
+    format: "dd/MMM/yyyy"
+    pattern: '^\d{2}/[A-Za-z]{3}/\d{4}$'
+  - key: value_date
+    header: '^Value Date$'
+  - key: kind
+    header: '^Transaction Type$'
+  - key: description
+    header: '^Transaction Details$'
+  - key: reference
+    header: '^Reference$'
+  # Money out is printed with a minus sign.
+  - key: money_out
+    header: '^Money Out$'
+    align: right
+    negative: true
+  - key: money_in
+    header: '^Money In$'
+    align: right
+  - key: balance
+    header: '^Running Balance$'
+    align: right
+
+row_starts_with: date
+order: detect
+# Cells are centred in their rows, so wrapped text sits above and below
+# the date, and a row can run over a page break.
+wrap: centered
+header_on_every_page: true
+# Every page overlays the statement date and period, in large type, on the
+# table.
+max_word_height: 2.5
+table_end:
+  - '^Showing page \d+ of \d+'
+skip:
+  # The opening balance, with no date; the summary prints it too.
+  - '^BALANCE FWD\b'
+
+# A charge is a separate row with the reference of its transaction.
+fees:
+  kind: '(?:\bCharge|\bFee)$'
+
+# First match wins. A row giving back an earlier one with the same
+# reference (a failed transfer, a refunded fee) is read as its reversal
+# before these rules.
+rules:
+  # To an M-Pesa number: "<2547... number>-<NAME>", the name often followed
+  # by "Mobile Money". Some print a prefix first, or no name.
+  - id: mobile_money
+    type: sent
+    kind: '^Mobile Money(?: Transfer)?$'
+    pattern: '(?:^|\s)(?<account>(?:254|0)\d{9})(?:\s*-\s*(?:\d+\s*-\s*)?(?<counterparty>.+?))?(?:\s+Mobile Money)?$'
+  - id: mobile_money_unnamed
+    type: sent
+    kind: '^Mobile Money(?: Transfer)?$'
+  # A Vooma wallet top-up, to a phone number.
+  - id: vooma_top_up
+    type: sent
+    kind: '^Vooma\b.*\bTop\b'
+    pattern: '(?:^|\s)(?<account>(?:254|0)\d{9})(?:\s*-\s*(?<counterparty>.+?))?(?:\s+Mobile Money)?$'
+  # The other bank's account holder, then their account number and bank.
+  - id: pesalink
+    type: sent
+    kind: '^Pesalink(?: Outgoing)?$'
+    pattern: '^(?<counterparty>.+?)(?:\s+\d[\d-]*-.*)?$'
+  - id: swift
+    type: sent
+    kind: '^Outward SWIFT\b'
+    pattern: '\bto\s+(?<counterparty>.+?)\s+-\s+(?<account>\d+)\b'
+  - id: swift_unnamed
+    type: sent
+    kind: '^Outward SWIFT\b'
+  # "Received from KES INWARD CLEARING ACCOUNT bank purpose <PAYER>".
+  - id: direct_credit
+    type: received
+    kind: '^Direct Credits?$'
+    pattern: '\bpurpose\s+(?<counterparty>.+)$'
+  - id: direct_credit_unnamed
+    type: received
+    kind: '^Direct Credits?$'
+  # Money in from M-Pesa through KCB Mobi: "Received ... <M-Pesa receipt>
+  # <number> <NAME> ...". The M-Pesa receipt is kept as the account, so the
+  # M-Pesa side of the same money pairs with it as an own transfer.
+  - id: mobi_received
+    type: received
+    kind: '^Mobi$'
+    pattern: '\b(?<account>[A-Z0-9]{10})\s+(?:254|0)\d{9}\s+(?<counterparty>.+?)(?:\s+\d+)?$'
+    ignore_case: false
+  - id: mobi
+    type: bank
+    kind: '^Mobi$'
+  # A KCB mobile loan (Vooma) paid into the account, and its recovery
+  # from the account, which the KCB SMS pack reads as a loan repayment.
+  - id: mobile_loan
+    type: bank
+    kind: '(?:\bLoan Disbursement|^MobileLoan)$'
+  - id: loan_repayment
+    type: loan_repayment
+    kind: '\bRecovery$'
+  # To a savings goal ("Goal Top Up <NAME>") or another account, and money
+  # in from one.
+  - id: transfer
+    type: sent
+    kind: '^Transfer$'
+    direction: out
+    pattern: '^(?:Goal Top Up\s+)?(?<counterparty>.+)$'
+  - id: transfer_in
+    type: received
+    kind: '^Transfer$'
+    direction: in
+    pattern: '^(?:transfer\s+(?:from\s+|to\s+)?)?(?<counterparty>.+)$'
+  # A card payment at a merchant, as KCB's card SMS reads it.
+  - id: card_payment
+    type: bank
+    kind: '^POS(?: Txn)?$'
+    pattern: '^(?:\d{6,}\s+)?(?<counterparty>.+)$'
+
+password_hint: kcb_statement
+''',
   'mpesa_statement': r'''
 # yaml-language-server: $schema=../../schema/statement-pack.schema.json
 # The Safaricom M-Pesa full statement (PDF). Column names and detail wording

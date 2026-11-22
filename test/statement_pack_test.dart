@@ -123,4 +123,78 @@ void main() {
       DateTime.utc(2026, 10, 2, 13, 5),
     );
   });
+
+  group('centred rows, type columns and summary balances', () {
+    const newer = 'min_engine: 0.5.0\n';
+    final withKind = _valid.replaceFirst(
+      "  - { key: description, header: '^Details\$' }\n",
+      "  - { key: kind, header: '^Type\$' }\n"
+          "  - { key: description, header: '^Details\$' }\n"
+          "  - { key: reference, header: '^Ref\$' }\n",
+    );
+
+    test('load with min_engine 0.5.0', () {
+      final pack = StatementPack.fromYaml(
+        '$newer$withKind'
+        'wrap: centered\n'
+        'header_on_every_page: true\n'
+        'max_word_height: 2.5\n'
+        "table_end: ['^Page \\d+']\n"
+        "opening_balance: 'Opening (?<amount>[\\d,.]+)'\n"
+        "closing_balance: 'Closing (?<amount>[\\d,.]+)'\n"
+        "fees: { kind: 'Charge\$' }\n"
+        'rules:\n'
+        "  - { id: sent_out, type: sent, kind: '^Transfer\$', direction: out }\n",
+      );
+      expect(pack.wrap, RowWrap.centered);
+      expect(pack.headerOnEveryPage, isTrue);
+      expect(pack.maxWordHeight, 2.5);
+      expect(pack.tableEnd, hasLength(1));
+      expect(pack.openingBalance, isNotNull);
+      expect(pack.fees?.kind, isNotNull);
+      expect(pack.fees?.description, isNull);
+      expect(pack.rules.single.direction, Direction.outgoing);
+      expect(pack.rules.single.pattern, isNull);
+    });
+
+    test('need min_engine 0.5.0', () {
+      expect(
+        _problems('${withKind}wrap: centered\n'),
+        contains(contains('raise min_engine')),
+      );
+      expect(_problems(withKind), contains(contains('the kind column')));
+    });
+
+    for (final (name, extra) in [
+      ('an unknown wrap', 'wrap: sideways'),
+      ('a word height ratio of 1 or less', 'max_word_height: 1'),
+      ('a summary balance without an amount group', "opening_balance: 'Open'"),
+      (
+        'a rule direction that is not in or out',
+        "rules:\n  - { id: a, type: sent, kind: '^T\$', direction: up }",
+      ),
+      (
+        'a rule with neither pattern nor kind',
+        'rules:\n  - { id: a, type: sent }',
+      ),
+      ('fees with neither description nor kind', 'fees: {}'),
+    ]) {
+      test('reject $name', () {
+        expect(_problems('$newer$withKind$extra\n'), isNotEmpty);
+      });
+    }
+
+    test('a rule or fee kind needs a kind column', () {
+      expect(
+        _problems("$newer${_valid}fees: { kind: 'Charge\$' }\n"),
+        contains(contains('needs a "kind" column')),
+      );
+      expect(
+        _problems(
+          "$newer${_valid}rules:\n  - { id: a, type: sent, kind: '^T\$' }\n",
+        ),
+        contains(contains('needs a "kind" column')),
+      );
+    });
+  });
 }

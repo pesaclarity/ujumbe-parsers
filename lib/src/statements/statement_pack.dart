@@ -8,6 +8,24 @@ import '../yaml_reader.dart';
 /// The statement pack format version this engine reads.
 const supportedStatementPackSchema = 1;
 
+/// Statement pack fields newer than [firstEngineVersion], and the first
+/// engine version that reads each. A pack using one must set `min_engine`
+/// to at least that version, so an older engine refuses the pack instead
+/// of failing on it.
+const statementFeatureMinEngine = <String, String>{
+  'the kind column': '0.5.0',
+  'the value_date column': '0.5.0',
+  'kind on a rule': '0.5.0',
+  'direction on a rule': '0.5.0',
+  'kind on fees': '0.5.0',
+  'wrap': '0.5.0',
+  'table_end': '0.5.0',
+  'header_on_every_page': '0.5.0',
+  'max_word_height': '0.5.0',
+  'opening_balance': '0.5.0',
+  'closing_balance': '0.5.0',
+};
+
 /// What a statement table column holds.
 enum StatementColumnKey {
   /// The institution's reference, such as an M-Pesa receipt number.
@@ -21,6 +39,13 @@ enum StatementColumnKey {
 
   /// The description or details.
   description('description'),
+
+  /// The transaction type as the statement prints it in a column of its
+  /// own, such as `Mobile Money Transfer`; rules and fees can match it.
+  kind('kind'),
+
+  /// The value date, printed beside the transaction date; not read.
+  valueDate('value_date'),
 
   /// The transaction status, such as `Completed`.
   status('status'),
@@ -133,14 +158,34 @@ enum RowOrder {
   final String code;
 }
 
-/// Description rule: the first rule matching a row's description sets its
-/// type, counterparty and account.
+/// How a row's wrapped lines sit around the line that starts it.
+enum RowWrap {
+  /// Wrapped lines follow the line that starts the row, as most statements
+  /// print them.
+  below('below'),
+
+  /// Cells are centred in their row, so wrapped text sits above and below
+  /// the line that starts it. Rows are told apart by the space between
+  /// them, and a row cut by a page break continues on the next page.
+  centered('centered');
+
+  const RowWrap(this.code);
+
+  /// The value used in pack files.
+  final String code;
+}
+
+/// Description rule: the first rule matching a row's description (and its
+/// [kind], when the rule names one) sets its type, counterparty and
+/// account.
 class StatementRule {
   /// Creates a rule. Prefer [StatementPack.fromYaml], which validates.
   const StatementRule({
     required this.id,
     required this.type,
-    required this.pattern,
+    this.pattern,
+    this.kind,
+    this.direction,
   });
 
   /// Unique within its pack, e.g. `paybill`.
@@ -150,18 +195,28 @@ class StatementRule {
   final TransactionType type;
 
   /// Matches the description, with optional `counterparty` and `account`
-  /// named groups.
-  final RegExp pattern;
+  /// named groups; null matches any description.
+  final RegExp? pattern;
+
+  /// Matches the [StatementColumnKey.kind] cell; null matches any.
+  final RegExp? kind;
+
+  /// The only direction of rows the rule matches; null matches both.
+  final Direction? direction;
 }
 
 /// Charge rows printed separately from the payment they belong to, which
 /// are folded into it as its fee, as the SMS for the payment states it.
 class FeeRows {
-  /// Creates a fee rule.
-  const FeeRows(this.description);
+  /// Creates a fee rule. At least one of [description] and [kind] is set;
+  /// a charge row matches every one that is.
+  const FeeRows(this.description, {this.kind});
 
   /// Matches the description of a charge row.
-  final RegExp description;
+  final RegExp? description;
+
+  /// Matches the [StatementColumnKey.kind] cell of a charge row.
+  final RegExp? kind;
 }
 
 /// A validated statement pack: how to read one statement layout.
@@ -188,6 +243,12 @@ class StatementPack {
     this.fees,
     this.amount,
     this.passwordHint,
+    this.wrap = RowWrap.below,
+    this.tableEnd = const [],
+    this.headerOnEveryPage = false,
+    this.maxWordHeight,
+    this.openingBalance,
+    this.closingBalance,
   });
 
   /// Parses and validates a pack from its YAML text, for an engine at
@@ -243,7 +304,25 @@ class StatementPack {
       'amount',
       'rules',
       'password_hint',
+      'wrap',
+      'table_end',
+      'header_on_every_page',
+      'max_word_height',
+      'opening_balance',
+      'closing_balance',
     });
+    // Newer fields this pack uses, checked against its min_engine below.
+    final features = <String>{
+      for (final key in const [
+        'wrap',
+        'table_end',
+        'header_on_every_page',
+        'max_word_height',
+        'opening_balance',
+        'closing_balance',
+      ])
+        if (doc.containsKey(key)) key,
+    };
 
     final schema = r.integer('schema');
     if (schema != null && schema != supportedStatementPackSchema) {
@@ -272,6 +351,17 @@ class StatementPack {
         !_groups(period.pattern).containsAll(const {'start', 'end'})) {
       problems.add('period: must capture "start" and "end" groups');
     }
+    final map = doc;
+    RegExp? balancePattern(String key) {
+      final pattern = _regex(map, key, problems, optional: true);
+      if (pattern != null && !_groups(pattern.pattern).contains('amount')) {
+        problems.add('$key: must capture an "amount" group');
+      }
+      return pattern;
+    }
+
+    final openingBalance = balancePattern('opening_balance');
+    final closingBalance = balancePattern('closing_balance');
     final periodFormat = r.timeFormat(
       'period_format',
       optional: period == null,
@@ -280,6 +370,10 @@ class StatementPack {
 
     final columns = _readColumns(doc['columns'], problems);
     final keys = {for (final c in columns) c.key};
+    if (keys.contains(StatementColumnKey.kind)) features.add('the kind column');
+    if (keys.contains(StatementColumnKey.valueDate)) {
+      features.add('the value_date column');
+    }
     final rowStartText = r.string('row_starts_with');
     final rowStart = rowStartText == null
         ? null
@@ -319,6 +413,25 @@ class StatementPack {
     }
     final completed = _regex(doc, 'completed_status', problems, optional: true);
     final skip = _regexList(doc, 'skip', problems, optional: true) ?? const [];
+    final tableEnd =
+        _regexList(doc, 'table_end', problems, optional: true) ?? const [];
+    final wrapText = r.string('wrap', optional: true);
+    final wrap = wrapText == null
+        ? RowWrap.below
+        : RowWrap.values.where((w) => w.code == wrapText).firstOrNull;
+    if (wrapText != null && wrap == null) {
+      problems.add('wrap: must be below or centered');
+    }
+    final headerOnEveryPage = r.boolean('header_on_every_page') ?? false;
+    final maxHeightNode = doc['max_word_height'];
+    double? maxWordHeight;
+    if (maxHeightNode != null) {
+      if (maxHeightNode is num && maxHeightNode > 1) {
+        maxWordHeight = maxHeightNode.toDouble();
+      } else {
+        problems.add('max_word_height: must be a number above 1');
+      }
+    }
 
     FeeRows? fees;
     final feesNode = doc['fees'];
@@ -330,9 +443,33 @@ class StatementPack {
           feesNode,
           problems,
           prefix: 'fees.',
-        ).checkKeys(const {'description'});
-        final pattern = _regex(feesNode, 'description', problems, at: 'fees.');
-        if (pattern != null) fees = FeeRows(pattern);
+        ).checkKeys(const {'description', 'kind'});
+        final pattern = _regex(
+          feesNode,
+          'description',
+          problems,
+          at: 'fees.',
+          optional: true,
+        );
+        final kind = _regex(
+          feesNode,
+          'kind',
+          problems,
+          at: 'fees.',
+          optional: true,
+        );
+        if (kind != null) features.add('kind on fees');
+        if (pattern == null && kind == null) {
+          if (!feesNode.containsKey('description') &&
+              !feesNode.containsKey('kind')) {
+            problems.add('fees: set description, kind or both');
+          }
+        } else {
+          fees = FeeRows(pattern, kind: kind);
+        }
+        if (kind != null && !keys.contains(StatementColumnKey.kind)) {
+          problems.add('fees.kind: needs a "kind" column');
+        }
         if (!keys.contains(StatementColumnKey.reference)) {
           problems.add('fees: needs a "reference" column to link fee rows');
         }
@@ -355,7 +492,25 @@ class StatementPack {
     }
 
     final rules = _readRules(doc['rules'], problems);
+    if (rules.any((rule) => rule.direction != null)) {
+      features.add('direction on a rule');
+    }
+    if (rules.any((rule) => rule.kind != null)) {
+      features.add('kind on a rule');
+      if (!keys.contains(StatementColumnKey.kind)) {
+        problems.add('rules: kind needs a "kind" column');
+      }
+    }
     final hint = r.string('password_hint', pattern: _idPattern, optional: true);
+    for (final feature in features) {
+      final needs = statementFeatureMinEngine[feature]!;
+      if (!engineSatisfies(needs, engine: minEngine)) {
+        problems.add(
+          '$feature needs engine $needs, but min_engine is $minEngine; '
+          'raise min_engine',
+        );
+      }
+    }
 
     if (problems.isNotEmpty) throw PackFormatException(source, problems);
     return StatementPack(
@@ -379,6 +534,12 @@ class StatementPack {
       amount: amount,
       rules: List.unmodifiable(rules),
       passwordHint: hint,
+      wrap: wrap!,
+      tableEnd: List.unmodifiable(tableEnd),
+      headerOnEveryPage: headerOnEveryPage,
+      maxWordHeight: maxWordHeight,
+      openingBalance: openingBalance,
+      closingBalance: closingBalance,
     );
   }
 
@@ -443,6 +604,32 @@ class StatementPack {
 
   /// Key of the app's approved password hint for this statement.
   final String? passwordHint;
+
+  /// How wrapped lines sit around the line that starts a row.
+  final RowWrap wrap;
+
+  /// Lines that end the table on their page, such as a page footer: the
+  /// line and everything below it are left out of the table.
+  final List<RegExp> tableEnd;
+
+  /// Whether every page of the table repeats its header row. Pages without
+  /// one, such as a closing summary page, are then left out of the table.
+  final bool headerOnEveryPage;
+
+  /// Words taller than this many times the page's median word height are
+  /// dropped before reading, with lone punctuation printed beside them:
+  /// some statements overlay large header text on the table.
+  final double? maxWordHeight;
+
+  /// Finds the opening balance the statement prints in its summary, with
+  /// an `amount` group, in the text outside the table.
+  final RegExp? openingBalance;
+
+  /// Finds the closing balance the statement prints in its summary.
+  final RegExp? closingBalance;
+
+  /// Whether rows carry a time of day, rather than only a date.
+  bool get hasTimes => timeFormat.hasTime;
 
   /// The column for [key], or null when the statement has none.
   StatementColumn? column(StatementColumnKey key) =>
@@ -618,7 +805,21 @@ class StatementPack {
       }
       final before = problems.length;
       final r = YamlFieldReader(item, problems, prefix: '$at.');
-      r.checkKeys(const {'id', 'type', 'pattern', 'ignore_case'});
+      r.checkKeys(const {
+        'id',
+        'type',
+        'pattern',
+        'kind',
+        'direction',
+        'ignore_case',
+      });
+      final directionText = r.string('direction', optional: true);
+      final direction = directionText == null
+          ? null
+          : Direction.fromCode(directionText);
+      if (directionText != null && direction == null) {
+        problems.add('$at.direction: must be in or out');
+      }
       final id = r.string('id', pattern: _idPattern);
       if (id != null && !seen.add(id)) {
         problems.add('$at.id: duplicate rule id "$id"');
@@ -628,13 +829,26 @@ class StatementPack {
       if (typeText != null && type == null) {
         problems.add('$at.type: unknown type "$typeText"');
       }
+      final ignoreCase = r.boolean('ignore_case') ?? true;
+      final kind = _regex(
+        item,
+        'kind',
+        problems,
+        at: '$at.',
+        optional: true,
+        ignoreCase: ignoreCase,
+      );
       final pattern = _regex(
         item,
         'pattern',
         problems,
         at: '$at.',
-        ignoreCase: r.boolean('ignore_case') ?? true,
+        optional: kind != null || item.containsKey('kind'),
+        ignoreCase: ignoreCase,
       );
+      if (kind != null && _groups(kind.pattern).isNotEmpty) {
+        problems.add('$at.kind: must not capture groups');
+      }
       if (pattern != null) {
         final extra = _groups(pattern.pattern).difference(_ruleGroups);
         if (extra.isNotEmpty) {
@@ -644,7 +858,15 @@ class StatementPack {
         }
       }
       if (problems.length > before) continue;
-      rules.add(StatementRule(id: id!, type: type!, pattern: pattern!));
+      rules.add(
+        StatementRule(
+          id: id!,
+          type: type!,
+          pattern: pattern,
+          kind: kind,
+          direction: direction,
+        ),
+      );
     }
     return rules;
   }

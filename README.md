@@ -172,6 +172,20 @@ Bump a pack's `version` whenever its rules change. Maintainers sign released pac
 Statement PDFs are read from each word's position on the page, so columns and wrapped descriptions survive. The app extracts the words; a statement pack says how to read them. The full design is in the [statement import spec](https://github.com/pesaclarity/docs/blob/main/spec/statement-import.md).
 
 1. **Write `packs/<id>/statement.yaml`.** Copy `packs/mpesa/statement.yaml`. Set `institution` to the SMS pack's id, `detect` patterns that match the first page, the `period`, and one entry under `columns` per table column, left to right, each with a `header` pattern. Amounts and balances are `align: right`. Use `money_in` and `money_out`, or one `amount` column with `amount: { negative_is: out }` or a `marker` column with `marker_out` and `marker_in` (`DR` and `CR`). `row_starts_with` names the column that is filled only on a row's first line, usually the date. Add `skip` patterns for page chrome, `fees` if charges are separate rows, and description `rules` to set the transaction type, `counterparty` and `account`.
+
+   Statements laid out like KCB's (see `packs/kcb/statement.yaml`) need engine `0.5.0` (`min_engine: 0.5.0`) for these:
+
+   | Field | What it does |
+   | --- | --- |
+   | `kind` and `value_date` columns | A transaction type printed in its own column, which rules (`kind:`) and `fees` (`kind:`) can match; a value date beside the date, not read. |
+   | `direction` on a rule | The rule matches only rows moving money that way (`in` or `out`). |
+   | `wrap: centered` | Cells are centred in their rows, so wrapped text sits above and below the line that starts a row. Rows are told apart by the space between them, and a row cut by a page break continues on the next page. |
+   | `table_end` | A matching line, such as a page footer, ends the table on its page. |
+   | `header_on_every_page` | Pages without the header row (a closing summary) are not part of the table. |
+   | `max_word_height` | Words taller than this many times the page's median word height (large header text overlaid on the table) are dropped. |
+   | `opening_balance`, `closing_balance` | Read the summary's balances (an `amount` group); the statement then reconciles only if its rows start and end at them. |
+
+   A row that gives back an earlier row with the same reference (same type, or description, and amount, the other way) is read as its reversal, with the reference as its `account`.
 2. **Write `statement_fixtures.yaml`.** Typeset synthetic pages: `columns` gives each column's left edge (or `">"` and its right edge for amounts), and each line is free text or a list of cells. Cover every rule, a row wrapping across a page break, and the expected balances.
 3. **Check it** with `dart run tool/check_packs.dart packs/<id>` and `dart run tool/bundle_packs.dart`.
 
